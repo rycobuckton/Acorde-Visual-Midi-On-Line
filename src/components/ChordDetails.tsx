@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChordAnalysis } from '../types';
-import { Music, Layers, Compass } from 'lucide-react';
+import { Music, Layers, Compass, Maximize2, Minimize2 } from 'lucide-react';
 
 function calculateIntervalFromNoteNames(note1: string, note2: string): number {
   if (!note1 || !note2) return -1;
@@ -52,6 +52,53 @@ interface ChordDetailsProps {
   setUseFlat: (flat: boolean) => void;
   useEasyMode: boolean;
   setUseEasyMode: (easy: boolean) => void;
+}
+
+// Retorna a unidade base (vw) para o tamanho da fonte do acorde na tela cheia de modo responsivo e fluido
+function getChordBaseFontSize(): string {
+  // Retorna um valor fixo e estável de 11vw para evitar o efeito indesejado de auto-ajuste/ficar encolhendo ao tocar acordes de diferentes tamanhos.
+  // O usuário pode regular perfeitamente o tamanho ideal do texto usando os botões de escala de fonte (A+ e A-) na barra superior.
+  return '11vw';
+}
+
+// Limpa a descrição do acorde removendo variações de "Acorde de" ou "Acorde" no início ou em qualquer parte
+function cleanChordDescription(name: string): string {
+  if (!name) return '';
+  // Remove "Acorde de ", "Acorde: Acorde ", "Acorde: ", "Acorde ", case-insensitive no início
+  let cleaned = name.replace(/^(acorde:\s*acorde\s+|acorde:\s*|acorde\s+de\s+|acorde\s+)/i, '');
+  // Remove menções repetidas a "acorde"
+  cleaned = cleaned.replace(/\bacorde\s+de\s+/ig, '').replace(/\bacorde\s+/ig, '');
+  if (cleaned.length > 0) {
+    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+  }
+  return cleaned;
+}
+
+// Formata a exibição do nome do acorde colocando "add9" e "sus" em minúsculo e sem parênteses
+function formatChordDisplay(chordName: string): string {
+  if (!chordName) return '';
+  let formatted = chordName;
+
+  // 1. Primeiro normalize todos os "add" e "sus" para minúsculo
+  formatted = formatted.replace(/add([\d#b,+-]*)/ig, (_, p1) => 'add' + p1.toLowerCase());
+  formatted = formatted.replace(/sus([\d#b,+-]*)/ig, (_, p1) => 'sus' + p1.toLowerCase());
+
+  // 2. Remove parênteses temporariamente de todos os "add" para padronização
+  formatted = formatted.replace(/\((add[\d#b,+-]*)\)/g, '$1');
+
+  // 3. Se for um acorde menor (tem 'm' antes do 'add'), colocamos parênteses no 'add' para ficar legível: Am(add9)
+  // Caso contrário (acorde maior), fica sem parênteses: Cadd9
+  formatted = formatted.replace(/madd([\d#b,+-]*)/g, 'm(add$1)');
+
+  // 4. Para os "sus", sempre removemos os parênteses: (sus4) -> sus4, (sus2) -> sus2
+  formatted = formatted.replace(/\((sus[\d#b,+-]*)\)/g, '$1');
+
+  // 5. Se houver múltiplos "add" consecutivos separados por vírgula, ex: add9,add11 -> add9,11
+  while (formatted.includes(',add')) {
+    formatted = formatted.replace(/,add/g, ',');
+  }
+
+  return formatted;
 }
 
 export default function ChordDetails({
@@ -110,6 +157,38 @@ export default function ChordDetails({
     showFifthOmitted = chordHasSetima && !temQuintaJusta && !quintaAlterada;
   }
 
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [fsFontScale, setFsFontScale] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('midi_analyzer_fs_font_scale');
+      return saved ? parseFloat(saved) : 1.0;
+    } catch {
+      return 1.0;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('midi_analyzer_fs_font_scale', String(fsFontScale));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [fsFontScale]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFullscreen(false);
+      }
+    };
+    if (isFullscreen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
+
   return (
     <div translate="no" className="notranslate w-full flex flex-col space-y-4">
       {/* PAINEL 1: NOME DO ACORDE (Destaque Principal - Altura Rigorosamente Fixa) */}
@@ -127,10 +206,10 @@ export default function ChordDetails({
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-mono tracking-[0.25em] text-white/40 uppercase flex items-center">
               <Music className="w-3.5 h-3.5 text-accent mr-1.5" />
-              Análise Harmônica
+              Acorde
             </span>
 
-            {/* Controles de Cifra (Fácil & #/b) */}
+            {/* Controles de Cifra (Fácil & #/b & Fullscreen) */}
             <div className="flex items-center space-x-2">
               {/* Botão de Modo Fácil (EASY) */}
               <button
@@ -170,6 +249,15 @@ export default function ChordDetails({
                   b
                 </button>
               </div>
+
+              {/* Botão Tela Cheia (Fullscreen) */}
+              <button
+                onClick={() => setIsFullscreen(true)}
+                className="bg-white/5 hover:bg-white/10 p-1.5 border border-white/10 text-white/40 hover:text-white transition-all cursor-pointer rounded-none flex items-center justify-center"
+                title="Exibir em tela cheia (Atalho: ESC para sair)"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
@@ -177,19 +265,19 @@ export default function ChordDetails({
           <div className="mt-2 h-[80px] flex flex-col justify-center">
             {analysis ? (
               <div>
-                <h1 className="text-3xl sm:text-4xl font-light tracking-tighter text-accent truncate">
-                  {analysis.chordName}
+                <h1 className="text-3xl sm:text-4xl font-medium font-sans tracking-tight text-accent truncate">
+                  {formatChordDisplay(analysis.chordName)}
                 </h1>
-                <p className="text-[10px] text-white/40 tracking-[0.15em] uppercase mt-1 font-mono leading-relaxed truncate">
-                  {analysis.name}
+                <p className="text-[10px] text-white/40 tracking-[0.15em] uppercase mt-1 font-sans leading-relaxed truncate">
+                  {cleanChordDescription(analysis.name)}
                 </p>
               </div>
             ) : (
               <div>
-                <h1 className="text-2xl sm:text-3xl font-light tracking-tighter text-white/20 uppercase truncate">
+                <h1 className="text-2xl sm:text-3xl font-medium font-sans tracking-tight text-white/20 uppercase truncate">
                   Aguardando...
                 </h1>
-                <p className="text-[10px] text-white/30 tracking-[0.1em] mt-1 font-mono leading-relaxed">
+                <p className="text-[10px] text-white/30 tracking-[0.1em] mt-1 font-sans leading-relaxed">
                   Toque notas para identificar acordes.
                 </p>
               </div>
@@ -255,6 +343,163 @@ export default function ChordDetails({
           </div>
         </div>
       </div>
+
+      {/* OVERLAY TELA CHEIA (FULLSCREEN) - Otimizado para Tablets & Stands de Partitura */}
+      {isFullscreen && (
+        <div className="fixed inset-0 bg-[#070707] z-[9999] flex flex-col justify-between p-4 sm:p-6 md:p-8 select-none animate-fade-in text-white">
+          {/* Top Header Controls */}
+          <div className="flex items-center justify-between w-full max-w-[1550px] mx-auto border-b border-white/5 pb-4">
+            <div className="flex items-center space-x-3">
+              <span className="text-xs font-mono tracking-[0.3em] text-white/40 uppercase flex items-center">
+                <Music className="w-4 h-4 text-accent mr-2" />
+                Modo Leitura Gigante
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              {/* Seletor de Tamanho da Fonte */}
+              <div className="flex bg-white/5 border border-white/10 p-0.5 text-[10px] font-mono items-center">
+                <button
+                  onClick={() => setFsFontScale(prev => Math.max(0.4, Number((prev - 0.1).toFixed(2))))}
+                  className="px-2.5 py-1 text-white/40 hover:text-white transition cursor-pointer font-bold select-none"
+                  title="Diminuir Fonte"
+                >
+                  A-
+                </button>
+                <span className="px-2 py-1 text-accent font-medium select-none border-x border-white/5 min-w-[45px] text-center">
+                  {Math.round(fsFontScale * 100)}%
+                </span>
+                <button
+                  onClick={() => setFsFontScale(prev => Math.min(3.0, Number((prev + 0.1).toFixed(2))))}
+                  className="px-2.5 py-1 text-white/40 hover:text-white transition cursor-pointer font-bold select-none"
+                  title="Aumentar Fonte"
+                >
+                  A+
+                </button>
+              </div>
+
+              {/* Controles de Cifra no Fullscreen */}
+              <button
+                onClick={() => setUseEasyMode(!useEasyMode)}
+                className={`px-3 py-1 text-[10px] font-mono uppercase border transition cursor-pointer select-none ${
+                  useEasyMode
+                    ? 'bg-accent/15 text-accent border-accent-border font-bold'
+                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85'
+                }`}
+                title="Modo Fácil"
+              >
+                EASY
+              </button>
+
+              <div className="flex bg-white/5 border border-white/10 p-0.5 text-[10px] font-mono">
+                <button
+                  onClick={() => setUseFlat(false)}
+                  className={`px-3 py-1 uppercase transition ${
+                    !useFlat
+                      ? 'bg-accent/15 text-accent font-bold'
+                      : 'text-white/40 hover:text-white/85'
+                  }`}
+                >
+                  #
+                </button>
+                <button
+                  onClick={() => setUseFlat(true)}
+                  className={`px-3 py-1 uppercase transition ${
+                    useFlat
+                      ? 'bg-accent/15 text-accent font-bold'
+                      : 'text-white/40 hover:text-white/85'
+                  }`}
+                >
+                  b
+                </button>
+              </div>
+
+              {/* Botão de Fechar */}
+              <button
+                onClick={() => setIsFullscreen(false)}
+                className="bg-accent hover:bg-accent-hover text-black px-4 py-1.5 text-xs font-mono font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center space-x-1.5"
+                title="Sair da tela cheia (ESC)"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span>Sair</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Central Area: Massive Chord Name */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-2 my-2">
+            {analysis ? (
+              <div className="space-y-4 sm:space-y-6 w-full max-w-full animate-fade-in">
+                {/* O tamanho do texto adapta dinamicamente para comportar cifras longas e curtas */}
+                <h1 
+                  style={{ fontSize: `calc(${getChordBaseFontSize()} * ${fsFontScale})` }}
+                  className="font-normal tracking-tight text-accent leading-none break-words select-all font-sans"
+                >
+                  {formatChordDisplay(analysis.chordName)}
+                </h1>
+                <p className="text-base sm:text-xl md:text-2xl text-white/50 tracking-[0.15em] uppercase font-sans leading-relaxed break-words whitespace-normal px-4 max-w-5xl mx-auto">
+                  {cleanChordDescription(analysis.name)}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium font-sans tracking-tight text-white/15 uppercase animate-pulse">
+                  Aguardando notas...
+                </h1>
+                <p className="text-xs sm:text-sm text-white/30 tracking-[0.15em] font-sans uppercase">
+                  Toque um acorde para exibição gigante
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Area: Tech Details & Recommended Scales */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[1550px] mx-auto border-t border-white/10 pt-6 mt-auto">
+            {/* Tech Details Column */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white/5 p-4 border border-white/5 flex flex-col justify-center items-center text-center">
+                <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Tônica</span>
+                <span className="text-xl sm:text-2xl font-mono font-bold text-accent mt-1">
+                  {analysis ? analysis.root : '—'}
+                </span>
+              </div>
+              <div className="bg-white/5 p-4 border border-white/5 flex flex-col justify-center items-center text-center">
+                <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Baixo</span>
+                <span className="text-xl sm:text-2xl font-mono font-bold text-white/80 mt-1">
+                  {analysis ? analysis.bass : '—'}
+                </span>
+              </div>
+              <div className="bg-white/5 p-4 border border-white/5 flex flex-col justify-center items-center text-center">
+                <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Notas</span>
+                <span className="text-sm sm:text-base font-mono font-bold text-white mt-1 truncate max-w-full">
+                  {analysis ? analysis.notes.join(', ') : '—'}
+                </span>
+              </div>
+            </div>
+
+            {/* Recommended Scales Column */}
+            <div className="bg-white/5 border border-white/5 p-4 flex flex-col justify-center">
+              <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest mb-2.5 block text-center md:text-left">
+                Escalas Recomendadas para Improviso
+              </span>
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                {analysis && analysis.scales.length > 0 ? (
+                  analysis.scales.slice(0, 3).map((scale, idx) => (
+                    <span
+                      key={`fs-scale-${idx}`}
+                      className="bg-accent/15 border border-accent/25 px-3 py-1.5 text-xs text-accent font-mono uppercase font-semibold"
+                    >
+                      {scale}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-white/20 font-mono py-1">Aguardando análise de acorde para sugerir escalas...</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

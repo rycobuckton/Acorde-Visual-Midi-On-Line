@@ -13,7 +13,7 @@ export class PolySynth {
   private useSoundfont: boolean = false; // Desabilitado por padrão
   private soundfontLoading: boolean = false;
   private soundfontLoaded: boolean = false;
-  private soundfontLibrary: 'FluidR3' | 'MusyngKite' = 'FluidR3';
+  private soundfontLibrary: 'FluidR3' | 'MusyngKite' = 'MusyngKite';
   private pianoSamples: Record<string, AudioBuffer> = {};
   
   public onStateChange?: (state: 'idle' | 'loading' | 'loaded' | 'error') => void;
@@ -40,7 +40,39 @@ export class PolySynth {
   }
 
   constructor() {
-    // Lazy init no primeiro toque
+    // Lazy init no primeiro toque + ler do localStorage se disponível no navegador
+    if (typeof window !== 'undefined') {
+      try {
+        const savedLib = localStorage.getItem('midi_analyzer_sf_library');
+        if (savedLib === 'FluidR3' || savedLib === 'MusyngKite') {
+          this.soundfontLibrary = savedLib;
+        } else {
+          this.soundfontLibrary = 'MusyngKite';
+        }
+        
+        const savedSource = localStorage.getItem('midi_analyzer_soundsource');
+        if (savedSource === 'soundfont') {
+          this.useSoundfont = true;
+        }
+
+        const savedMuted = localStorage.getItem('midi_analyzer_muted');
+        if (savedMuted === 'true') {
+          this.isMuted = true;
+        }
+
+        const savedVolume = localStorage.getItem('midi_analyzer_volume');
+        if (savedVolume !== null) {
+          this.volume = parseFloat(savedVolume);
+        }
+
+        const savedWaveform = localStorage.getItem('midi_analyzer_waveform');
+        if (savedWaveform) {
+          this.waveform = savedWaveform as OscillatorType;
+        }
+      } catch (e) {
+        console.error("Erro ao ler localStorage no constructor do PolySynth:", e);
+      }
+    }
   }
 
   private initCtx() {
@@ -247,7 +279,10 @@ export class PolySynth {
         // Ataque adaptativo ultra-rápido à velocidade: para toques suaves usamos 4ms para suavização.
         // Para toques firmes, usamos 1.2ms para preservar todo o brilho e ataque realista do martelo do piano (médios e agudos).
         const attackTime = velocity < 40 ? 0.004 : 0.0012;
-        gainNode.gain.linearRampToValueAtTime(voiceVolume, now + attackTime);
+        // Amplificamos o volume das notas do Soundfont em 2.2x para nivelar com os osciladores e sons gerais do PC.
+        // O DynamicsCompressor do master Gain evita qualquer distorção ou clip digital em acordes cheios.
+        const sfVolume = Math.min(voiceVolume * 2.2, 2.0);
+        gainNode.gain.linearRampToValueAtTime(sfVolume, now + attackTime);
 
         source.connect(gainNode);
 

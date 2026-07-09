@@ -132,10 +132,12 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   // =============================================================================
   // 5. SEXTAS E ADD9
   // =============================================================================
-  { name: "Maior com 6", symbol: "6", intervals: [0, 4, 7, 9], priority: 90, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
-  { name: "Maior com 6", symbol: "6(9)", intervals: [0, 2, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 45 },
-  { name: "Maior com 6", symbol: "6(9#)", intervals: [0, 3, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 60 },
-  { name: "Menor com 6", symbol: "m6", intervals: [0, 3, 7, 9], priority: 85, quality: "Menor", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
+  { name: "Maior com 6", symbol: "6", intervals: [0, 4, 7, 9], priority: 90, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Maior com 6", symbol: "6(9)", intervals: [0, 2, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 45 },
+  { name: "Maior com 6", symbol: "6(9,11)", intervals: [0, 2, 4, 5, 7, 9], priority: 106, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Maior com 6", symbol: "6(9#)", intervals: [0, 3, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 60 },
+  { name: "Menor com 6", symbol: "m6", intervals: [0, 3, 7, 9], priority: 85, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Menor com 6", symbol: "m6(9,11)", intervals: [0, 2, 3, 5, 7, 9], priority: 101, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
   { name: "Menor com 5#", symbol: "m5#", intervals: [0, 3, 8], priority: 55, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 0 },
   { name: "Add4", symbol: "(add4)", intervals: [0, 4, 5, 7], priority: 95, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
   { name: "Add4", symbol: "(add4)", intervals: [0, 4, 5], priority: 75, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 50 },
@@ -161,6 +163,7 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   { name: "Maior 7M(9)", symbol: "7M(9)", intervals: [0, 2, 4, 7, 11], priority: 110, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 90 },
   { name: "Maior 7M(13)", symbol: "7M(13)", intervals: [0, 2, 4, 7, 9, 11], priority: 105, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 85 },
   { name: "Maior 7M(9,11,13)", symbol: "7M(9,11,13)", intervals: [0, 2, 4, 5, 7, 9, 11], priority: 102, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Menor 7M(9,11,13)", symbol: "m7M(9,11,13)", intervals: [0, 2, 3, 5, 7, 9, 11], priority: 102, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
 
   // =============================================================================
   // 7. ACORDES SEM QUINTA (no5)
@@ -330,6 +333,14 @@ function isBlacklisted(def: ChordDefinition, relativeSemitones: Set<number>): bo
   // Acorde Diminuto com quinta justa (7) gera conflito com a quinta diminuta (6)
   if (def.quality === "Diminuto" && relativeSemitones.has(7)) {
     return true;
+  }
+
+  // Se o acorde for de 6ª (Maior com 6 ou Menor com 6), mas o usuário tocou alguma sétima (10 ou 11),
+  // isso deve ser considerado um acorde com 7ª e 13ª, então desqualificamos o de 6ª.
+  if (def.name.includes("com 6") || def.symbol.startsWith("6") || def.symbol.startsWith("m6")) {
+    if (relativeSemitones.has(10) || relativeSemitones.has(11)) {
+      return true;
+    }
   }
 
   return false;
@@ -566,6 +577,17 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
         });
 
         const formattedExtras = sortedExtras.map(n => {
+          // Se for uma 9 sem sétima, retorna add9
+          if (n === 2 && !relativeSemitones.has(10) && !relativeSemitones.has(11)) {
+            return "add9";
+          }
+          // Se for uma 11/4 sem sétima, retorna add11 (se tiver 9 junto) ou add4
+          if (n === 5 && !relativeSemitones.has(10) && !relativeSemitones.has(11)) {
+            if (relativeSemitones.has(2)) {
+              return "add11";
+            }
+            return "add4";
+          }
           if (n === 5 && def.quality === "Maior" && !relativeSemitones.has(10) && !relativeSemitones.has(11)) {
             return "add4";
           }

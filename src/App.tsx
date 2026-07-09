@@ -7,7 +7,7 @@ import VirtualPiano from './components/VirtualPiano';
 import MIDIConnection from './components/MIDIConnection';
 import ChordDetails from './components/ChordDetails';
 import SynthControls from './components/SynthControls';
-import { Trash2, Award, Compass, Music, HelpCircle, X } from 'lucide-react';
+import { Trash2, Award, Compass, Music, HelpCircle, X, Coffee, Heart } from 'lucide-react';
 import { Note } from '@tonaljs/tonal';
 
 export default function App() {
@@ -54,6 +54,9 @@ export default function App() {
   // Modal informativo sobre o projeto
   const [showIntroModal, setShowIntroModal] = useState<boolean>(false);
 
+  // Estado para copiar a chave Pix
+  const [copiedPix, setCopiedPix] = useState<boolean>(false);
+
   // Sincronizar preferência de Modo Fácil no local storage
   useEffect(() => {
     localStorage.setItem('midi_analyzer_easy_mode', String(useEasyMode));
@@ -75,31 +78,22 @@ export default function App() {
     localStorage.setItem('midi_analyzer_accent', accentId);
   }, [accentId]);
 
-  // Sincronizar estados do synth com o singleton e o localStorage
+  // Sincronizar estados do synth com o singleton e o localStorage de forma ordenada
   useEffect(() => {
     synth.setVolume(synthVolume);
-    localStorage.setItem('midi_analyzer_volume', String(synthVolume));
-  }, [synthVolume]);
-
-  useEffect(() => {
     synth.setMute(isMuted);
-    localStorage.setItem('midi_analyzer_muted', String(isMuted));
-  }, [isMuted]);
-
-  useEffect(() => {
     synth.setWaveform(synthWaveform);
-    localStorage.setItem('midi_analyzer_waveform', synthWaveform);
-  }, [synthWaveform]);
-
-  useEffect(() => {
-    synth.setUseSoundfont(soundSource === 'soundfont');
-    localStorage.setItem('midi_analyzer_soundsource', soundSource);
-  }, [soundSource]);
-
-  useEffect(() => {
+    
+    // Define a biblioteca antes de habilitar o soundfont para evitar cargas redundantes ou concorrentes
     synth.setSoundfontLibrary(sfLibrary);
+    synth.setUseSoundfont(soundSource === 'soundfont');
+
+    localStorage.setItem('midi_analyzer_volume', String(synthVolume));
+    localStorage.setItem('midi_analyzer_muted', String(isMuted));
+    localStorage.setItem('midi_analyzer_waveform', synthWaveform);
+    localStorage.setItem('midi_analyzer_soundsource', soundSource);
     localStorage.setItem('midi_analyzer_sf_library', sfLibrary);
-  }, [sfLibrary]);
+  }, [synthVolume, isMuted, synthWaveform, soundSource, sfLibrary]);
 
   // Inicializar configurações adicionais do synth
   useEffect(() => {
@@ -113,7 +107,7 @@ export default function App() {
 
   // Criar um Set de números MIDI ativos para busca em tempo constante
   const activeMidis = useMemo(() => {
-    return new Set(activeNotes.map((n: ActiveNote) => n.midi));
+    return new Set(activeNotes.map(n => n.midi));
   }, [activeNotes]);
 
   // Handler para quando uma nota é pressionada (Midi ou Virtual)
@@ -122,15 +116,15 @@ export default function App() {
     if (!noteName) return;
 
     // Registrar que a nota está fisicamente pressionada
-    setPhysicallyPressedMidis((prev: Set<number>) => {
+    setPhysicallyPressedMidis((prev) => {
       const next = new Set(prev);
       next.add(midi);
       return next;
     });
 
     // Evitar duplicidade caso o hardware envie duas mensagens seguidas
-    setActiveNotes((prev: ActiveNote[]) => {
-      if (prev.some((n: ActiveNote) => n.midi === midi)) return prev;
+    setActiveNotes((prev) => {
+      if (prev.some((n) => n.midi === midi)) return prev;
       
       const newNote: ActiveNote = {
         midi,
@@ -149,16 +143,16 @@ export default function App() {
   // Handler para quando uma nota é solta (Midi ou Virtual)
   const handleNoteOff = (midi: number) => {
     // Registrar que a nota foi fisicamente liberada
-    setPhysicallyPressedMidis((prev: Set<number>) => {
+    setPhysicallyPressedMidis((prev) => {
       const next = new Set(prev);
       next.delete(midi);
       return next;
     });
 
     // Se o pedal de sustain não estiver pressionado, removemos a nota das ativas
-    setIsSustainPressed((isSustainActive: boolean) => {
+    setIsSustainPressed((isSustainActive) => {
       if (!isSustainActive) {
-        setActiveNotes((prev: ActiveNote[]) => prev.filter((n: ActiveNote) => n.midi !== midi));
+        setActiveNotes((prev) => prev.filter((n) => n.midi !== midi));
         // Parar nota no sintetizador
         synth.noteOff(midi);
       }
@@ -172,17 +166,17 @@ export default function App() {
 
     if (!pressed) {
       // Quando o pedal é liberado, removemos todas as notas que não estão fisicamente pressionadas
-      setPhysicallyPressedMidis((currentPhysical: Set<number>) => {
-        setActiveNotes((prev: ActiveNote[]) => {
-          const toRemove = prev.filter((n: ActiveNote) => !currentPhysical.has(n.midi));
+      setPhysicallyPressedMidis((currentPhysical) => {
+        setActiveNotes((prev) => {
+          const toRemove = prev.filter((n) => !currentPhysical.has(n.midi));
           
           // Parar no sintetizador as notas que foram liberadas pelo pedal
-          toRemove.forEach((n: ActiveNote) => {
+          toRemove.forEach((n) => {
             synth.noteOff(n.midi);
           });
 
           // Manter apenas as notas que estão fisicamente pressionadas
-          return prev.filter((n: ActiveNote) => currentPhysical.has(n.midi));
+          return prev.filter((n) => currentPhysical.has(n.midi));
         });
         return currentPhysical;
       });
@@ -199,7 +193,7 @@ export default function App() {
 
   // Análise do acorde com base nas notas ativas, notação preferida e Modo Fácil
   const chordAnalysis = useMemo(() => {
-    const midiNumbers = activeNotes.map((n: ActiveNote) => n.midi);
+    const midiNumbers = activeNotes.map(n => n.midi);
     return analyzePlayedNotes(midiNumbers, useFlat, useEasyMode);
   }, [activeNotes, useFlat, useEasyMode]);
 
@@ -207,7 +201,7 @@ export default function App() {
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col antialiased">
       {/* Header Principal */}
       <header className="border-b border-white/10 bg-[#0D0D0D] sticky top-0 z-30 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="w-8 h-8 bg-accent shadow-[0_0_12px_var(--accent)] flex items-center justify-center">
               <Music className="w-4 h-4 text-black font-extrabold" />
@@ -246,8 +240,37 @@ export default function App() {
         </div>
       </header>
 
+      {/* Banner de Apoio PIX */}
+      <div className="bg-[#111111] border-b border-white/5 px-6 py-2.5 text-xs text-white/80 select-none">
+        <div className="w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto flex items-center justify-center gap-x-3 gap-y-2 flex-wrap">
+          <div className="flex items-center space-x-2 shrink-0">
+            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" />
+            <Coffee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span className="font-sans text-white/90">Contribuir Pix:</span>
+          </div>
+          <div className="flex items-center bg-black/40 border border-white/10 rounded overflow-hidden shrink-0">
+            <span className="px-3 py-1 font-mono text-xs text-accent select-all cursor-text font-bold">
+              rycobuckton@gmail.com
+            </span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText('rycobuckton@gmail.com');
+                setCopiedPix(true);
+                setTimeout(() => setCopiedPix(false), 2000);
+              }}
+              className="bg-white/5 hover:bg-white/10 px-2.5 py-1 border-l border-white/10 text-white/60 hover:text-white transition-all font-mono text-[10px] uppercase tracking-wider font-bold cursor-pointer min-w-[75px] text-center"
+            >
+              {copiedPix ? 'Copiado!' : 'Copiar'}
+            </button>
+          </div>
+          <span className="text-white/40 font-sans text-xs shrink-0">
+            (Luiz H. Buckton P.)
+          </span>
+        </div>
+      </div>
+
       {/* Grid Principal Layout */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:py-6">
+      <main className="flex-1 w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto p-4 md:py-6">
         <div className="flex flex-col space-y-6">
           
           {/* Fila Superior: Partitura (Esquerda) e Cifra (Direita) */}

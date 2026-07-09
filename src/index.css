@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --color-accent: var(--accent, #00F0FF);
   --color-accent-dim: var(--accent-dim, rgba(0, 240, 255, 0.15));
