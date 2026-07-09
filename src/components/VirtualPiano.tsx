@@ -84,21 +84,101 @@ export default function VirtualPiano({
     }
   }
 
-  // Manipuladores de eventos de toque e clique do mouse
-  const handleMouseDown = (midi: number) => {
-    onNoteOn(midi);
+  // Set local para controlar quais notas foram pressionadas especificamente por este teclado virtual (com Ref para evitar closures desatualizadas)
+  const [virtualPressedMidis, setVirtualPressedMidis] = React.useState<Set<number>>(new Set());
+  const virtualPressedRef = React.useRef<Set<number>>(new Set());
+
+  const handlePressStart = (midi: number) => {
+    if (!virtualPressedRef.current.has(midi)) {
+      virtualPressedRef.current.add(midi);
+      setVirtualPressedMidis(new Set(virtualPressedRef.current));
+      onNoteOn(midi);
+    }
   };
 
-  const handleMouseUp = (midi: number) => {
-    onNoteOff(midi);
+  const handlePressEnd = (midi: number) => {
+    if (virtualPressedRef.current.has(midi)) {
+      virtualPressedRef.current.delete(midi);
+      setVirtualPressedMidis(new Set(virtualPressedRef.current));
+      onNoteOff(midi);
+    }
   };
+
+  const handleMouseLeave = (midi: number) => {
+    if (virtualPressedRef.current.has(midi)) {
+      handlePressEnd(midi);
+    }
+  };
+
+  // Handler de Toque Unificado (Suporta Glissando, Multi-toques ilimitados e resolve travamento no Tablet)
+  const handleTouchChange = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const activeMidisFromTouch = new Set<number>();
+
+    for (let i = 0; i < e.touches.length; i++) {
+      const touch = e.touches[i];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (element) {
+        let current: HTMLElement | null = element as HTMLElement;
+        while (current) {
+          if (current.id === "virtual-piano-section") {
+            break; // Parar se subiu demais
+          }
+          const midiStr = current.getAttribute('data-midi');
+          if (midiStr) {
+            activeMidisFromTouch.add(parseInt(midiStr, 10));
+            break;
+          }
+          current = current.parentElement;
+        }
+      }
+    }
+
+    const currentPressed = virtualPressedRef.current;
+
+    // 1. Ligar novas notas que acabaram de ser tocadas
+    activeMidisFromTouch.forEach((midi) => {
+      if (!currentPressed.has(midi)) {
+        onNoteOn(midi);
+      }
+    });
+
+    // 2. Desligar notas que foram soltas ou cujos dedos saíram da tecla
+    currentPressed.forEach((midi) => {
+      if (!activeMidisFromTouch.has(midi)) {
+        onNoteOff(midi);
+      }
+    });
+
+    // 3. Atualizar estados sincronizados
+    virtualPressedRef.current = activeMidisFromTouch;
+    setVirtualPressedMidis(new Set(activeMidisFromTouch));
+  };
+
+  // Segurança global para mouseup (evita notas presas se soltar o clique fora da janela do navegador)
+  React.useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (virtualPressedRef.current.size > 0) {
+        virtualPressedRef.current.forEach((midi) => {
+          onNoteOff(midi);
+        });
+        virtualPressedRef.current.clear();
+        setVirtualPressedMidis(new Set());
+      }
+    };
+
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [onNoteOff]);
 
   return (
-    <div className="w-full bg-[#0D0D0D] border border-white/10 p-6">
+    <div translate="no" className="notranslate w-full bg-[#0D0D0D] border border-white/10 p-6 select-none">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-[10px] font-mono tracking-[0.2em] text-white/40 uppercase flex items-center">
           <span className="w-3 h-3 bg-accent shadow-[0_0_8px_var(--accent)] mr-2.5" />
-          Teclado Virtual
+          Teclado Virtual (Multitouch & Deslizável)
         </h3>
 
         {/* Seleção de Oitavas */}
@@ -123,8 +203,15 @@ export default function VirtualPiano({
         </div>
       </div>
 
-      {/* Piano Wrapper */}
-      <div className="relative w-full h-44 select-none bg-[#050505] border border-black/40">
+      {/* Piano Wrapper com suporte total a gestos multitoque e glissando */}
+      <div 
+        id="virtual-piano-wrapper"
+        onTouchStart={handleTouchChange}
+        onTouchMove={handleTouchChange}
+        onTouchEnd={handleTouchChange}
+        onTouchCancel={handleTouchChange}
+        className="relative w-full h-44 select-none bg-[#050505] border border-black/40 touch-none"
+      >
         {/* Camada das Teclas Brancas */}
         <div className="absolute top-0 left-0 w-full h-full flex">
           {whiteKeys.map((key) => {
@@ -134,17 +221,10 @@ export default function VirtualPiano({
             return (
               <button
                 key={`white-key-${key.midi}`}
-                onMouseDown={() => handleMouseDown(key.midi)}
-                onMouseUp={() => handleMouseUp(key.midi)}
-                onMouseLeave={() => activeMidis.has(key.midi) ? null : handleMouseUp(key.midi)}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  handleMouseDown(key.midi);
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  handleMouseUp(key.midi);
-                }}
+                data-midi={key.midi}
+                onMouseDown={() => handlePressStart(key.midi)}
+                onMouseUp={() => handlePressEnd(key.midi)}
+                onMouseLeave={() => handleMouseLeave(key.midi)}
                 style={{ width: `${100 / 22}%` }}
                 className={`h-full border-r border-black/30 transition-all duration-75 flex flex-col justify-end pb-3 items-center text-[10px] font-mono font-semibold cursor-pointer ${
                   isActive 
@@ -167,17 +247,10 @@ export default function VirtualPiano({
             return (
               <button
                 key={`black-key-${key.midi}`}
-                onMouseDown={() => handleMouseDown(key.midi)}
-                onMouseUp={() => handleMouseUp(key.midi)}
-                onMouseLeave={() => activeMidis.has(key.midi) ? null : handleMouseUp(key.midi)}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  handleMouseDown(key.midi);
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  handleMouseUp(key.midi);
-                }}
+                data-midi={key.midi}
+                onMouseDown={() => handlePressStart(key.midi)}
+                onMouseUp={() => handlePressEnd(key.midi)}
+                onMouseLeave={() => handleMouseLeave(key.midi)}
                 style={{
                   left: `${key.leftOffsetPercent}%`,
                   width: '3%'
@@ -197,7 +270,7 @@ export default function VirtualPiano({
 
       <div className="mt-3 text-center">
         <p className="text-[10px] text-white/30 font-mono uppercase tracking-wider">
-          Mapeamento diatônico otimizado de C a C com sensibilidade de toque simulada.
+          Arraste o dedo pelas teclas para fazer glissando. Suporte completo a multitoque sem teclas travadas.
         </p>
       </div>
     </div>

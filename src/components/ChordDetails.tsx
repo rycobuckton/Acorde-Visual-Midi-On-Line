@@ -111,7 +111,7 @@ export default function ChordDetails({
   }
 
   return (
-    <div className="w-full flex flex-col space-y-4">
+    <div translate="no" className="notranslate w-full flex flex-col space-y-4">
       {/* PAINEL 1: NOME DO ACORDE (Destaque Principal - Altura Rigorosamente Fixa) */}
       <div className="bg-[#0D0D0D] border border-white/10 p-5 flex flex-col justify-between relative overflow-hidden h-[245px] max-h-[245px] select-none">
         {/* Massive watermark background chord name */}

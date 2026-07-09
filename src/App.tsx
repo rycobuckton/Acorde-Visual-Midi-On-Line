@@ -16,13 +16,30 @@ export default function App() {
   const [isSustainPressed, setIsSustainPressed] = useState<boolean>(false);
   const [baseOctave, setBaseOctave] = useState<number>(3); // oitava padrão inicia em C4-C6 (base octave 3)
   
-  // Estados do Sintetizador e Áudio
-  const [synthVolume, setSynthVolume] = useState<number>(0.25);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [synthWaveform, setSynthWaveform] = useState<OscillatorType>('triangle');
+  // Estados do Sintetizador e Áudio (carregados do localStorage para persistir entre recarregamentos)
+  const [synthVolume, setSynthVolume] = useState<number>(() => {
+    const saved = localStorage.getItem('midi_analyzer_volume');
+    return saved !== null ? parseFloat(saved) : 0.25;
+  });
+  const [isMuted, setIsMuted] = useState<boolean>(() => {
+    return localStorage.getItem('midi_analyzer_muted') === 'true';
+  });
+  const [synthWaveform, setSynthWaveform] = useState<OscillatorType>(() => {
+    return (localStorage.getItem('midi_analyzer_waveform') as OscillatorType) || 'triangle';
+  });
 
   // Preferência de Notação (false = sustenidos #, true = bemóis b)
   const [useFlat, setUseFlat] = useState<boolean>(false);
+
+  // Fonte de som: 'synth' (Sintetizador Analógico) ou 'soundfont' (Piano Acústico Real SF2)
+  const [soundSource, setSoundSource] = useState<'synth' | 'soundfont'>(() => {
+    return (localStorage.getItem('midi_analyzer_soundsource') as 'synth' | 'soundfont') || 'soundfont'; // 'soundfont' (SF2) como padrão
+  });
+
+  // Biblioteca SoundFont (FluidR3 ou MusyngKite) - MusyngKite é HD e padrão
+  const [sfLibrary, setSfLibrary] = useState<'FluidR3' | 'MusyngKite'>(() => {
+    return (localStorage.getItem('midi_analyzer_sf_library') as 'FluidR3' | 'MusyngKite') || 'MusyngKite';
+  });
 
   // Modo Fácil (EASY): oculta inversões para tríades simples
   const [useEasyMode, setUseEasyMode] = useState<boolean>(() => {
@@ -58,13 +75,34 @@ export default function App() {
     localStorage.setItem('midi_analyzer_accent', accentId);
   }, [accentId]);
 
-  // Inicializar configurações do synth
+  // Sincronizar estados do synth com o singleton e o localStorage
   useEffect(() => {
     synth.setVolume(synthVolume);
-    synth.setMute(isMuted);
-    synth.setWaveform(synthWaveform);
-    synth.setUseSoundfont(false);
+    localStorage.setItem('midi_analyzer_volume', String(synthVolume));
+  }, [synthVolume]);
 
+  useEffect(() => {
+    synth.setMute(isMuted);
+    localStorage.setItem('midi_analyzer_muted', String(isMuted));
+  }, [isMuted]);
+
+  useEffect(() => {
+    synth.setWaveform(synthWaveform);
+    localStorage.setItem('midi_analyzer_waveform', synthWaveform);
+  }, [synthWaveform]);
+
+  useEffect(() => {
+    synth.setUseSoundfont(soundSource === 'soundfont');
+    localStorage.setItem('midi_analyzer_soundsource', soundSource);
+  }, [soundSource]);
+
+  useEffect(() => {
+    synth.setSoundfontLibrary(sfLibrary);
+    localStorage.setItem('midi_analyzer_sf_library', sfLibrary);
+  }, [sfLibrary]);
+
+  // Inicializar configurações adicionais do synth
+  useEffect(() => {
     // Mostrar modal informativo na primeira visita
     const visited = localStorage.getItem('midi_analyzer_visited');
     if (!visited) {
@@ -257,8 +295,12 @@ export default function App() {
               setIsMuted={setIsMuted}
               synthWaveform={synthWaveform}
               setSynthWaveform={setSynthWaveform}
+              soundSource={soundSource}
+              setSoundSource={setSoundSource}
               accentId={accentId}
               setAccentId={setAccentId}
+              sfLibrary={sfLibrary}
+              setSfLibrary={setSfLibrary}
             />
           </section>
 

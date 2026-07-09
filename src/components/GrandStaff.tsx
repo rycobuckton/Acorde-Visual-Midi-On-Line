@@ -276,7 +276,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
   }
 
   return (
-    <div id="grand-staff-container" className="relative w-full overflow-hidden bg-[#0A0A0A] border border-white/10 shadow-lg p-6">
+    <div id="grand-staff-container" translate="no" className="notranslate relative w-full overflow-hidden bg-[#0A0A0A] border border-white/10 shadow-lg p-6">
       <div className="absolute top-2 right-4 flex items-center space-x-1.5">
         <div 
           style={{ 
@@ -356,22 +356,22 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
           </g>
 
           {/* Símbolos das Claves (Unicode) */}
-          {/* Clave de Sol */}
+          {/* Clave de Sol (Loop central alinhado perfeitamente na segunda linha - G4) */}
           <text
             x="78"
-            y={yTrebleCenter + 15}
-            className="fill-white/20 font-serif font-bold text-6xl"
-            style={{ userSelect: 'none' }}
+            y={yTrebleCenter + 22}
+            className="fill-white/20 font-bold text-6xl"
+            style={{ userSelect: 'none', fontFamily: '"Times New Roman", Times, "Noto Music", serif' }}
           >
             𝄞
           </text>
 
-          {/* Clave de Fá */}
+          {/* Clave de Fá (Início da espiral alinhado perfeitamente na quarta linha - F3) */}
           <text
             x="78"
-            y={yBassCenter - lineSpacing}
-            className="fill-white/20 font-serif font-bold text-5xl"
-            style={{ userSelect: 'none' }}
+            y={yBassCenter + 4}
+            className="fill-white/20 font-bold text-5xl"
+            style={{ userSelect: 'none', fontFamily: '"Times New Roman", Times, "Noto Music", serif' }}
           >
             𝄢
           </text>
@@ -484,31 +484,23 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
 
       <div className="mt-2 border-t border-white/10 pt-4 px-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span className="text-[10px] font-mono tracking-[0.2em] text-white/40 uppercase font-bold flex items-center">
-            <span className="w-2 h-2 rounded-full mr-2 bg-accent shadow-[0_0_6px_var(--accent)]" />
+          <span className="text-[12px] font-mono tracking-[0.2em] text-white/40 uppercase font-bold flex items-center shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full mr-2.5 bg-accent shadow-[0_0_6px_var(--accent)]" />
             Intervalos Empilhados
           </span>
-          <div className="flex-1 flex flex-wrap items-center gap-1.5 sm:justify-start">
+          <div className="flex-1 flex flex-wrap items-center gap-2 sm:justify-start min-h-[36px]">
             {analysis ? (
               <>
-                {/* Baixo */}
-                {bassName && rootName && bassName !== rootName && (
-                  <span className="px-2 py-0.5 bg-white/5 border border-white/10 font-mono text-[10px] text-white/70">
-                    <span className="text-white/40 uppercase tracking-wider mr-1 text-[8px]">Baixo:</span>
-                    <strong className="text-white">{bassName}</strong>
-                  </span>
-                )}
-
                 {/* Tônica */}
                 {rootName && (
-                  <span className="px-2 py-0.5 bg-accent/10 border border-accent/20 font-mono text-[10px] text-accent flex items-center flex-wrap gap-1">
-                    <span className="text-accent/60 uppercase tracking-wider mr-1 text-[8px]">Tônica:</span>
-                    <strong className="text-accent mr-1">{rootName}</strong>
+                  <span className="px-2.5 py-1 bg-accent/10 border border-accent/20 font-mono text-[12px] text-accent flex items-center flex-wrap gap-1.5">
+                    <span className="text-accent/60 uppercase tracking-wider mr-1.5 text-[10px]">Tônica:</span>
+                    <strong className="text-accent font-bold mr-1">{rootName}</strong>
                     <span className="flex gap-1">
                       {tonicIntervals.map((name, i) => (
                         <span
                           key={i}
-                          className={`px-1 rounded-sm text-[9px] font-bold ${
+                          className={`px-1.5 py-0.5 rounded-sm text-[11px] font-bold ${
                             name === 'T'
                               ? 'bg-accent/20 text-accent border border-accent/30'
                               : 'bg-white/10 text-white/95'
@@ -521,15 +513,23 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
                   </span>
                 )}
 
+                {/* Baixo (se for diferente da tônica / invertido, exibido à direita) */}
+                {bassName && rootName && bassName !== rootName && (
+                  <span className="px-2.5 py-1 bg-white/5 border border-white/10 font-mono text-[12px] text-white/70 flex items-center">
+                    <span className="text-white/40 uppercase tracking-wider mr-1.5 text-[10px]">Baixo:</span>
+                    <strong className="text-white font-bold">{bassName}</strong>
+                  </span>
+                )}
+
                 {/* Alerta de 5a Omitida */}
                 {showFifthOmitted && (
-                  <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 font-mono text-[9px] font-bold text-emerald-400 uppercase tracking-wider flex items-center">
-                    <span className="mr-1 text-[11px]">✔️</span> 5ª Omitida
+                  <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 font-mono text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center">
+                    <span className="mr-1 text-[13px]">✔️</span> 5ª Omitida
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-white/20 font-mono text-[9px] uppercase tracking-wider">
+              <span className="text-white/20 font-mono text-[11px] uppercase tracking-wider">
                 Toque um acorde para visualizar os intervalos
               </span>
             )}

@@ -136,10 +136,10 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   { name: "Maior com 6", symbol: "6(9)", intervals: [0, 2, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 45 },
   { name: "Maior com 6", symbol: "6(9#)", intervals: [0, 3, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 60 },
   { name: "Menor com 6", symbol: "m6", intervals: [0, 3, 7, 9], priority: 85, quality: "Menor", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
-  { name: "Menor com 5#", symbol: "m5#", intervals: [0, 3, 8], priority: 70, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 0 },
+  { name: "Menor com 5#", symbol: "m5#", intervals: [0, 3, 8], priority: 55, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 0 },
   { name: "Add4", symbol: "(add4)", intervals: [0, 4, 5, 7], priority: 95, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
   { name: "Add4", symbol: "(add4)", intervals: [0, 4, 5], priority: 75, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 50 },
-  { name: "Add9", symbol: "(add9)", intervals: [0, 4, 7, 2], priority: 81, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 45 },
+  { name: "Add9", symbol: "(add9)", intervals: [0, 4, 7, 2], priority: 88, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 45 },
   { name: "Add13b", symbol: "add13b", intervals: [0, 4, 7, 8], priority: 81, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 20 },
   { name: "Add9", symbol: "(add9#)", intervals: [0, 4, 7, 3], priority: 81, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 30 },
   { name: "Add9", symbol: "m(add9)", intervals: [0, 2, 3, 7], priority: 90, quality: "Menor", podeTerTensoes: false, pontuacaoInversaoPermitida: 35 },
@@ -335,6 +335,31 @@ function isBlacklisted(def: ChordDefinition, relativeSemitones: Set<number>): bo
   return false;
 }
 
+function isIntervalTensionForChord(interval: number, quality: string): boolean {
+  if (interval === 0 || interval === 3 || interval === 4 || interval === 7 || interval === 10 || interval === 11) {
+    return false;
+  }
+  if (interval === 1) {
+    return true; // 9b
+  }
+  if (interval === 2) {
+    return quality !== "Suspenso"; // 9
+  }
+  if (interval === 5) {
+    return quality !== "Suspenso"; // 11
+  }
+  if (interval === 6) {
+    return quality !== "Diminuto" && quality !== "Meio-Diminuto"; // 11# vs b5
+  }
+  if (interval === 8) {
+    return quality !== "Aumentado" && quality !== "Meio-Diminuto"; // 13b vs #5
+  }
+  if (interval === 9) {
+    return true; // 13
+  }
+  return false;
+}
+
 export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = false, useEasyMode: boolean = false): ChordAnalysis | null => {
   if (!midiNumbers || midiNumbers.length === 0) return null;
 
@@ -349,6 +374,20 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
   const uniqueNotes = Array.from(new Set(notesWithoutOctave));
   const bassNote = getNoteNameWithNotation(Note.pitchClass(Note.fromMidi(lowestMidi)), useFlat);
   const bassChroma = lowestMidi % 12;
+
+  // Encontra o grupo contíguo de baixo (mesma nota/oitavas consecutivas no início)
+  let bassGroupCount = 1;
+  for (let i = 1; i < sortedMidis.length; i++) {
+    if (sortedMidis[i] % 12 === bassChroma) {
+      bassGroupCount++;
+    } else {
+      break;
+    }
+  }
+
+  const upperMidis = sortedMidis.slice(bassGroupCount);
+  const upperChromas = new Set(upperMidis.map(m => m % 12));
+  const isBassDoubled = upperChromas.has(bassChroma);
 
   // 1. Apenas 1 nota tocada
   if (sortedMidis.length === 1) {
@@ -413,7 +452,7 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
 
   // Tenta cada nota tocada como a tônica (root) candidata
   for (const rootChroma of uniqueChromas) {
-    // Calcular semitons relativos em relação a este root candidato
+    // Calcular semitons relativos em relação a este root candidato para o conjunto total
     const relativeSemitones = new Set<number>();
     for (const chroma of uniqueChromas) {
       relativeSemitones.add((chroma - rootChroma + 12) % 12);
@@ -427,17 +466,32 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
         continue;
       }
 
+      // Constrói o conjunto de semitons do "acorde em si" para esta definição candidata.
+      // Se a nota for de mesma classe de altura que o baixo (bassChroma), e NÃO for um dos intervalos
+      // essenciais definidos para este acorde, nós a ignoramos para que atue apenas como baixo de slash chord
+      // (por exemplo, em C7/B ou C/D), independentemente de o baixo estar dobrado ou não.
+      const chordItselfSemitones = new Set<number>();
+      for (const chroma of uniqueChromas) {
+        const semitone = (chroma - rootChroma + 12) % 12;
+        if (chroma === bassChroma) {
+          if (!def.intervals.includes(semitone)) {
+            continue;
+          }
+        }
+        chordItselfSemitones.add(semitone);
+      }
+
       // O acorde da base é considerado compatível se TODOS os seus intervalos essenciais
-      // forem encontrados no conjunto de notas tocadas
-      const matchesAll = def.intervals.every(semitone => relativeSemitones.has(semitone));
+      // forem encontrados no conjunto de semitons do "acorde em si"
+      const matchesAll = def.intervals.every(semitone => chordItselfSemitones.has(semitone));
       if (!matchesAll) continue;
 
-      // Filtra pela Lista Negra de Padrões
-      if (isBlacklisted(def, relativeSemitones)) {
+      // Filtra pela Lista Negra de Padrões usando o conjunto de semitons do "acorde em si"
+      if (isBlacklisted(def, chordItselfSemitones)) {
         continue;
       }
 
-      const rootMidi = sortedMidis.find(m => m % 12 === rootChroma) || rootChroma;
+      const rootMidi = sortedMidis.find(m => m % 12 === rootChroma) ?? sortedMidis[0] ?? 60;
       const rootName = getNoteNameWithNotation(Note.pitchClass(Note.fromMidi(rootMidi)), useFlat);
 
       // Se a tônica corresponde ao baixo real, é posição fundamental
@@ -448,18 +502,14 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
         continue;
       }
 
-      // Detecção de tensões e alterações adicionais tocadas
+      // Detecção de tensões e alterações adicionais tocadas (ignorando o baixo a menos que ele esteja dobrado nas vozes superiores)
       const extraNotes = Array.from(relativeSemitones).filter(n => !def.intervals.includes(n));
-
-      // FILTRO INTELIGENTE: Se a nota extra corresponder ao baixo do acorde (inversão/slash chord),
-      // e essa nota só aparece no baixo (não aparece em oitavas superiores nas vozes da direita), nós não a tratamos como tensão.
-      // Isso permite que [D, C, E, G] seja identificado como C/D (sem a tensão 9 em cima),
-      // enquanto [D, C, E, G, D] (com D também em cima) seja identificado como C9/D!
       const filteredExtraNotes = extraNotes.filter(n => {
-        const extraChroma = (rootChroma + n) % 12;
-        if (extraChroma !== bassChroma) return true;
-        const hasUpperChroma = sortedMidis.some(m => m > lowestMidi && m % 12 === bassChroma);
-        return hasUpperChroma;
+        const isBassInterval = n === (bassChroma - rootChroma + 12) % 12;
+        if (isBassInterval) {
+          return isBassDoubled;
+        }
+        return true;
       });
 
       const tensions: number[] = [];
@@ -480,7 +530,7 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
       score += def.intervals.length * 15;
 
       // REGRA: Recompensa para matches exatos (evita que notas extras poluam o matching de tríades simples)
-      if (filteredExtraNotes.length === 0 && def.intervals.length === uniqueChromas.length) {
+      if (filteredExtraNotes.length === 0 && def.intervals.length === chordItselfSemitones.size) {
         score += 20;
       }
 
@@ -489,7 +539,7 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
         const inversionPenalty = (100 - def.pontuacaoInversaoPermitida) * 0.5;
         score -= inversionPenalty;
       } else {
-        score += 25; // Bônus significativo para preferir posição fundamental sobre inversões equivalentes (ex: C6 sobre Am7/C)
+        score += 25; // Bônus significativo para preferir posição fundamental sobre inversões equivalentes
       }
 
       // Penalidade por notas extras
