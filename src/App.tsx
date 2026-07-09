@@ -113,7 +113,7 @@ export default function App() {
 
   // Criar um Set de números MIDI ativos para busca em tempo constante
   const activeMidis = useMemo(() => {
-    return new Set(activeNotes.map((n: ActiveNote) => n.midi));
+    return new Set(activeNotes.map(n => n.midi));
   }, [activeNotes]);
 
   // Handler para quando uma nota é pressionada (Midi ou Virtual)
@@ -122,15 +122,15 @@ export default function App() {
     if (!noteName) return;
 
     // Registrar que a nota está fisicamente pressionada
-    setPhysicallyPressedMidis((prev: Set<number>) => {
+    setPhysicallyPressedMidis((prev) => {
       const next = new Set(prev);
       next.add(midi);
       return next;
     });
 
     // Evitar duplicidade caso o hardware envie duas mensagens seguidas
-    setActiveNotes((prev: ActiveNote[]) => {
-      if (prev.some((n: ActiveNote) => n.midi === midi)) return prev;
+    setActiveNotes((prev) => {
+      if (prev.some((n) => n.midi === midi)) return prev;
       
       const newNote: ActiveNote = {
         midi,
@@ -149,16 +149,16 @@ export default function App() {
   // Handler para quando uma nota é solta (Midi ou Virtual)
   const handleNoteOff = (midi: number) => {
     // Registrar que a nota foi fisicamente liberada
-    setPhysicallyPressedMidis((prev: Set<number>) => {
+    setPhysicallyPressedMidis((prev) => {
       const next = new Set(prev);
       next.delete(midi);
       return next;
     });
 
     // Se o pedal de sustain não estiver pressionado, removemos a nota das ativas
-    setIsSustainPressed((isSustainActive: boolean) => {
+    setIsSustainPressed((isSustainActive) => {
       if (!isSustainActive) {
-        setActiveNotes((prev: ActiveNote[]) => prev.filter((n: ActiveNote) => n.midi !== midi));
+        setActiveNotes((prev) => prev.filter((n) => n.midi !== midi));
         // Parar nota no sintetizador
         synth.noteOff(midi);
       }
@@ -172,17 +172,17 @@ export default function App() {
 
     if (!pressed) {
       // Quando o pedal é liberado, removemos todas as notas que não estão fisicamente pressionadas
-      setPhysicallyPressedMidis((currentPhysical: Set<number>) => {
-        setActiveNotes((prev: ActiveNote[]) => {
-          const toRemove = prev.filter((n: ActiveNote) => !currentPhysical.has(n.midi));
+      setPhysicallyPressedMidis((currentPhysical) => {
+        setActiveNotes((prev) => {
+          const toRemove = prev.filter((n) => !currentPhysical.has(n.midi));
           
           // Parar no sintetizador as notas que foram liberadas pelo pedal
-          toRemove.forEach((n: ActiveNote) => {
+          toRemove.forEach((n) => {
             synth.noteOff(n.midi);
           });
 
           // Manter apenas as notas que estão fisicamente pressionadas
-          return prev.filter((n: ActiveNote) => currentPhysical.has(n.midi));
+          return prev.filter((n) => currentPhysical.has(n.midi));
         });
         return currentPhysical;
       });
@@ -199,7 +199,7 @@ export default function App() {
 
   // Análise do acorde com base nas notas ativas, notação preferida e Modo Fácil
   const chordAnalysis = useMemo(() => {
-    const midiNumbers = activeNotes.map((n: ActiveNote) => n.midi);
+    const midiNumbers = activeNotes.map(n => n.midi);
     return analyzePlayedNotes(midiNumbers, useFlat, useEasyMode);
   }, [activeNotes, useFlat, useEasyMode]);
 
