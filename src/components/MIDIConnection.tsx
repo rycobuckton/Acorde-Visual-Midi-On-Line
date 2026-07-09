@@ -16,6 +16,10 @@ export default function MIDIConnection({ onMidiNoteOn, onMidiNoteOff, onMidiSust
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [isScanning, setIsScanning] = useState(false);
 
+  const isInsecureContext = typeof window !== 'undefined' && 
+    window.location.protocol === 'http:' && 
+    !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+
   // Verificar suporte a Web MIDI API
   useEffect(() => {
     if (typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator) {
@@ -135,13 +139,34 @@ export default function MIDIConnection({ onMidiNoteOn, onMidiNoteOff, onMidiSust
           <div className="flex items-start bg-amber-950/20 border border-amber-500/30 p-4 text-amber-200 text-xs leading-relaxed font-mono">
             <AlertTriangle className="w-4 h-4 mr-2.5 shrink-0 text-amber-400" />
             <div>
-              <p className="font-semibold text-amber-100 uppercase tracking-wider">Web MIDI não suportado no navegador</p>
-              <p className="mt-1 text-white/50 leading-relaxed font-sans">
-                Seu navegador atual não suporta conexão direta com instrumentos MIDI (comum no iOS Safari). 
-                Para usar um teclado físico, utilize o <b>Google Chrome no Android/Desktop</b> ou o <b>Opera/Edge</b>. 
-                <br />
-                <span className="text-[#00F0FF] font-medium font-mono uppercase tracking-wider text-[10px] block mt-1">Você ainda pode usar o Teclado Virtual interativo normalmente!</span>
-              </p>
+              <p className="font-semibold text-amber-100 uppercase tracking-wider">Web MIDI Não Disponível</p>
+              {isInsecureContext ? (
+                <div className="mt-1 text-white/70 space-y-2 leading-relaxed font-sans">
+                  <p>
+                    Você está acessando por um IP local (<b>{typeof window !== 'undefined' && window.location.hostname}</b>) via HTTP. 
+                    Por motivos de segurança, os navegadores modernos (como o Google Chrome) <b>bloqueiam o acesso a instrumentos MIDI em conexões HTTP que não sejam localhost</b>.
+                  </p>
+                  <p className="text-amber-300 font-mono text-[11px] bg-amber-950/40 p-2.5 border border-amber-500/10 rounded">
+                    <b>Como resolver no Google Chrome:</b>
+                    <br />
+                    1. Digite e acesse no Chrome: <span className="text-white bg-black/40 px-1 py-0.5 rounded font-mono select-all">chrome://flags/#unsafely-treat-insecure-origin-as-secure</span>
+                    <br />
+                    2. <b>Ative (Enable)</b> a flag e adicione seu IP no campo de texto: <span className="text-white bg-black/40 px-1 py-0.5 rounded font-mono select-all">http://{typeof window !== 'undefined' && window.location.host}</span>
+                    <br />
+                    3. Clique em <b>Relaunch</b> no canto inferior direito para reiniciar o navegador.
+                  </p>
+                  <p className="text-white/40 text-[10px] leading-relaxed">
+                    Alternativamente, acesse usando o endereço de visualização segura <b>HTTPS</b> do AI Studio ou rode como <b>http://localhost:3000</b> no seu VS Code local (localhost é sempre considerado seguro).
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-1 text-white/50 leading-relaxed font-sans">
+                  Seu navegador atual não suporta conexão direta com instrumentos MIDI (comum no iOS Safari). 
+                  Para usar um teclado físico, utilize o <b>Google Chrome no Android/Desktop</b> ou o <b>Opera/Edge</b>. 
+                  <br />
+                  <span className="text-[#00F0FF] font-medium font-mono uppercase tracking-wider text-[10px] block mt-1">Você ainda pode usar o Teclado Virtual interativo normalmente!</span>
+                </p>
+              )}
             </div>
           </div>
         ) : errorMsg ? (
