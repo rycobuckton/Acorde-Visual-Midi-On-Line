@@ -103,11 +103,12 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   // =============================================================================
   { name: "Diminuto com 7", symbol: "°7", intervals: [0, 3, 6, 9], priority: 75, quality: "Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 98 },
   { name: "Diminuto", symbol: "°", intervals: [0, 3, 6], priority: 65, quality: "Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
-  { name: "Meio-Diminuto", symbol: "m7b5", intervals: [0, 3, 6, 10], priority: 85, quality: "Meio-Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 50 },
+  { name: "Meio-Diminuto", symbol: "m7b5", intervals: [0, 3, 6, 10], priority: 85, quality: "Meio-Diminuto", podeTerTensoes: true, pontuacaoInversaoPermitida: 85 },
   { name: "Meio-Diminuto", symbol: "m7(5#)", intervals: [0, 3, 8, 10], priority: 83, quality: "Meio-Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 20 },
-  { name: "Meio-Diminuto", symbol: "m7b5(9b)", intervals: [0, 1, 3, 6, 10], priority: 80, quality: "Meio-Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 57 },
-  { name: "Meio-Diminuto", symbol: "m7b5(9)", intervals: [0, 2, 3, 6, 10], priority: 80, quality: "Meio-Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 57 },
-  { name: "Meio-Diminuto", symbol: "m7b5(9,11)", intervals: [0, 2, 3, 5, 6, 10], priority: 80, quality: "Meio-Diminuto", podeTerTensoes: false, pontuacaoInversaoPermitida: 57 },
+  { name: "Meio-Diminuto", symbol: "m7b5(9b)", intervals: [0, 1, 3, 6, 10], priority: 80, quality: "Meio-Diminuto", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Meio-Diminuto", symbol: "m7b5(9)", intervals: [0, 2, 3, 6, 10], priority: 80, quality: "Meio-Diminuto", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Meio-Diminuto", symbol: "m7b5(9,11)", intervals: [0, 2, 3, 5, 6, 10], priority: 80, quality: "Meio-Diminuto", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Meio-Diminuto", symbol: "m7b5(9,11,13)", intervals: [0, 2, 3, 5, 6, 9, 10], priority: 135, quality: "Meio-Diminuto", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
 
   // =============================================================================
   // 3. QUINTAS ALTERADAS E AUMENTADOS
@@ -115,6 +116,7 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   { name: "Aumentado", symbol: "5b", intervals: [0, 4, 6], priority: 60, quality: "Aumentado", podeTerTensoes: false, pontuacaoInversaoPermitida: 1 },
   { name: "Dominante 7(5b)", symbol: "7(5b)", intervals: [0, 4, 6, 10], priority: 54, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 50 },
   { name: "Aumentado", symbol: "5#", intervals: [0, 4, 8], priority: 30, quality: "Aumentado", podeTerTensoes: true, pontuacaoInversaoPermitida: 0 },
+  { name: "Maior (b5,b13)", symbol: "(b5,b13)", intervals: [0, 4, 6, 8], priority: 110, quality: "Aumentado", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
   { name: "Aumentado", symbol: "5#(9,11)", intervals: [0, 2, 4, 5, 8], priority: 84, quality: "Aumentado", podeTerTensoes: false, pontuacaoInversaoPermitida: 0 },
   { name: "Aumentado", symbol: "5#(9)", intervals: [0, 2, 4, 8], priority: 72, quality: "Aumentado", podeTerTensoes: false, pontuacaoInversaoPermitida: 0 },
 
@@ -137,15 +139,16 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   { name: "Maior com 6", symbol: "6(9,11)", intervals: [0, 2, 4, 5, 7, 9], priority: 106, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
   { name: "Maior com 6", symbol: "6(9#)", intervals: [0, 3, 4, 7, 9], priority: 100, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 60 },
   { name: "Menor com 6", symbol: "m6", intervals: [0, 3, 7, 9], priority: 85, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
+  { name: "Menor com 6 e 11", symbol: "m6(11)", intervals: [0, 3, 5, 7, 9], priority: 102, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
   { name: "Menor com 6", symbol: "m6(9,11)", intervals: [0, 2, 3, 5, 7, 9], priority: 101, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
   { name: "Menor com 5#", symbol: "m5#", intervals: [0, 3, 8], priority: 55, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 0 },
   { name: "Add4", symbol: "(add4)", intervals: [0, 4, 5, 7], priority: 95, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
   { name: "Add4", symbol: "(add4)", intervals: [0, 4, 5], priority: 75, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 50 },
-  { name: "Add9", symbol: "(add9)", intervals: [0, 4, 7, 2], priority: 88, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 45 },
+  { name: "Add9", symbol: "(add9)", intervals: [0, 4, 7, 2], priority: 88, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 85 },
   { name: "Add13b", symbol: "add13b", intervals: [0, 4, 7, 8], priority: 81, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 20 },
-  { name: "Add9", symbol: "(add9#)", intervals: [0, 4, 7, 3], priority: 81, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 30 },
-  { name: "Add9", symbol: "m(add9)", intervals: [0, 2, 3, 7], priority: 90, quality: "Menor", podeTerTensoes: false, pontuacaoInversaoPermitida: 35 },
-  { name: "Add9", symbol: "(add9b)", intervals: [0, 1, 4, 7], priority: 80, quality: "Menor", podeTerTensoes: false, pontuacaoInversaoPermitida: 55 },
+  { name: "Maior com 9#", symbol: "(9#)", intervals: [0, 4, 7, 3], priority: 81, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 30 },
+  { name: "Add9", symbol: "m(add9)", intervals: [0, 2, 3, 7], priority: 90, quality: "Menor", podeTerTensoes: false, pontuacaoInversaoPermitida: 80 },
+  { name: "Maior com 9b", symbol: "(9b)", intervals: [0, 1, 4, 7], priority: 80, quality: "Maior", podeTerTensoes: false, pontuacaoInversaoPermitida: 55 },
 
   // =============================================================================
   // 6. EXTENSÕES EXPLÍCITAS (9, 11, 13)
@@ -156,14 +159,12 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   { name: "Menor 11", symbol: "m11", intervals: [0, 3, 5, 7, 10], priority: 95, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 60 },
   { name: "Menor 11", symbol: "m(4)", intervals: [0, 3, 5, 7], priority: 88, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 85 },
   { name: "Menor com 7M e 13", symbol: "m7M(13)", intervals: [0, 3, 7, 11, 2, 9], priority: 65, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
-  { name: "Dominante 13", symbol: "13", intervals: [0, 4, 7, 10, 2, 9], priority: 75, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
+  { name: "Dominante 13", symbol: "7(13)", intervals: [0, 2, 4, 7, 9, 10], priority: 115, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 90 },
   { name: "Menor 13", symbol: "m13", intervals: [0, 3, 7, 10, 2, 5, 9], priority: 94, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 45 },
 
   // --- Extensões Maiores com 7M ---
   { name: "Maior 7M(9)", symbol: "7M(9)", intervals: [0, 2, 4, 7, 11], priority: 110, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 90 },
   { name: "Maior 7M(13)", symbol: "7M(13)", intervals: [0, 2, 4, 7, 9, 11], priority: 105, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 85 },
-  { name: "Maior 7M(9,11,13)", symbol: "7M(9,11,13)", intervals: [0, 2, 4, 5, 7, 9, 11], priority: 102, quality: "Maior", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
-  { name: "Menor 7M(9,11,13)", symbol: "m7M(9,11,13)", intervals: [0, 2, 3, 5, 7, 9, 11], priority: 102, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
 
   // =============================================================================
   // 7. ACORDES SEM QUINTA (no5)
@@ -171,14 +172,14 @@ const CHORD_DEFINITIONS: ChordDefinition[] = [
   // --- Dominantes ---
   { name: "Dominante 7 sem 5", symbol: "7", intervals: [0, 4, 10], priority: 64, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
   { name: "Dominante 9 sem 5", symbol: "9", intervals: [0, 2, 4, 10], priority: 60, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 40 },
-  { name: "Dominante 13 sem 5", symbol: "13", intervals: [0, 4, 9, 10], priority: 75, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 45 },
-  { name: "Dom 13(9) sem 5", symbol: "13(9)", intervals: [0, 2, 4, 9, 10], priority: 80, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 85 },
+  { name: "Dominante 13 sem 5", symbol: "7(13)", intervals: [0, 4, 9, 10], priority: 75, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 45 },
+  { name: "Dom 13(9) sem 5", symbol: "7(13)", intervals: [0, 2, 4, 9, 10], priority: 85, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 85 },
   { name: "Dom 7(9b) sem 5", symbol: "7(9b)", intervals: [0, 1, 4, 10], priority: 65, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 50 },
   { name: "Dom 7(9#) sem 5", symbol: "7(9#)", intervals: [0, 3, 4, 10], priority: 68, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 60 },
   { name: "Dom 9(11#) sem 5", symbol: "9(11#)", intervals: [0, 2, 4, 6, 10], priority: 76, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 80 },
-  { name: "Dom 13(9b) sem 5", symbol: "13(9b)", intervals: [0, 1, 4, 9, 10], priority: 75, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
+  { name: "Dom 13(9b) sem 5", symbol: "7(9b,13)", intervals: [0, 1, 4, 9, 10], priority: 75, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
   { name: "Dom 13 sem 5", symbol: "(b13)", intervals: [0, 4, 8, 10], priority: 55, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
-  { name: "Dominante 7(#5) sem 5", symbol: "7(#5)", intervals: [0, 4, 8, 10], priority: 68, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
+  { name: "Dominante 7(5#)", symbol: "7(5#)", intervals: [0, 4, 8, 10], priority: 115, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 95 },
   { name: "Dom 7(11#) sem 5", symbol: "7(11#)", intervals: [0, 4, 6, 10], priority: 70, quality: "Dominante", podeTerTensoes: true, pontuacaoInversaoPermitida: 70 },
   // --- Menores ---
   { name: "Menor 7 sem 5", symbol: "m7", intervals: [0, 3, 10], priority: 49, quality: "Menor", podeTerTensoes: true, pontuacaoInversaoPermitida: 88 },
@@ -371,7 +372,7 @@ function isIntervalTensionForChord(interval: number, quality: string): boolean {
   return false;
 }
 
-export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = false, useEasyMode: boolean = false): ChordAnalysis | null => {
+export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = false, useEasyMode: boolean = false, onlyChords: boolean = false): ChordAnalysis | null => {
   if (!midiNumbers || midiNumbers.length === 0) return null;
 
   // Ordenar MIDI números
@@ -402,6 +403,9 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
 
   // 1. Apenas 1 nota tocada
   if (sortedMidis.length === 1) {
+    if (onlyChords) {
+      return null;
+    }
     const singleNote = notesWithOctave[0];
     const noteName = getNoteNameWithNotation(Note.pitchClass(Note.fromMidi(sortedMidis[0])), useFlat);
     const notePT = noteToPT(noteName);
@@ -424,6 +428,9 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
 
   // 2. Duas notas tocadas (Intervalo Harmônico)
   if (sortedMidis.length === 2) {
+    if (onlyChords) {
+      return null;
+    }
     const note1 = Note.fromMidi(sortedMidis[0]);
     const note2 = Note.fromMidi(sortedMidis[1]);
     const pc1 = getNoteNameWithNotation(Note.pitchClass(note1), useFlat);
@@ -545,10 +552,44 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
         score += 20;
       }
 
+      // REGRA: Penalização de acordes sem quinta se a quinta não for tocada
+      const isStandardQuality = def.quality === "Maior" || def.quality === "Menor" || def.quality === "Dominante";
+      const lacksFifthInDef = !def.intervals.includes(7);
+      if (isStandardQuality && lacksFifthInDef) {
+        const hasFifthPlayed = relativeSemitones.has(7);
+        if (!hasFifthPlayed) {
+          score -= 15; // Penalização leve se o acorde for de qualidade padrão mas não tiver a quinta tocada
+        }
+      }
+
       // Penalidade de Inversão / Bônus de Fundamental
       if (!isFundamental) {
         const inversionPenalty = (100 - def.pontuacaoInversaoPermitida) * 0.5;
         score -= inversionPenalty;
+
+        const bassRelative = (bassChroma - rootChroma + 12) % 12;
+
+        // Estrutura superior disfarçada
+        if (def.symbol !== "m7M" && (def.quality === "Menor" || def.quality === "Meio-Diminuto")) {
+          if (bassRelative === 11 || bassRelative === 2) {
+            score -= 40;
+          }
+        }
+
+        // Se o baixo for uma tensão/extensão (e não uma nota tonal básica como 1, 3, 5, 7),
+        // aplicamos uma penalidade extra significativa para priorizar fundamentais ou inversões padrão.
+        if (isIntervalTensionForChord(bassRelative, def.quality)) {
+          // Reduzimos a penalidade para a 9ª (2) e 11ª/4ª (5) se for um acorde Maior, Menor ou Dominante,
+          // pois baixo em 9 e 11 são baixos extremamente comuns em slash chords (ex: C/D, C/F, F/G).
+          const isCommonSlashBass = (bassRelative === 2 || bassRelative === 5) && 
+                                    (def.quality === "Maior" || def.quality === "Menor" || def.quality === "Dominante");
+          score -= isCommonSlashBass ? 10 : 35;
+        }
+
+        // Penalidade para inversão complexa (acorde invertido com mais de 4 notas na definição ou com notas extras)
+        if (def.intervals.length > 4 || filteredExtraNotes.length > 0) {
+          score -= 30;
+        }
       } else {
         score += 25; // Bônus significativo para preferir posição fundamental sobre inversões equivalentes
       }
@@ -565,6 +606,64 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
 
       // Montar Símbolo Final com TENSÕES E ALTERAÇÕES se permitido
       let finalSymbol = def.symbol;
+
+      const isBassOnlyInBass = !isBassDoubled;
+      const bassRelative = (bassChroma - rootChroma + 12) % 12;
+
+      // 1. Limpeza do baixo na sétima
+      if (!isFundamental && (bassRelative === 10 || bassRelative === 11) && isBassOnlyInBass) {
+        const tipoCoincide = (bassRelative === 10 && finalSymbol.includes("7") && !finalSymbol.includes("7M")) ||
+                             (bassRelative === 11 && finalSymbol.includes("7M"));
+        const ehSimbSimples = ["7", "m7", "7M", "m7M", "7sus4"].includes(finalSymbol);
+        if (tipoCoincide && ehSimbSimples) {
+          finalSymbol = finalSymbol.replace("7M", "").replace("7", "");
+          if (def.quality === "Menor" && !finalSymbol.includes("m")) {
+            finalSymbol = "m" + finalSymbol;
+          }
+        }
+      }
+
+      // 2. Limpeza do baixo na quarta
+      if (!isFundamental && bassRelative === 5 && isBassOnlyInBass) {
+        if (finalSymbol.includes("sus4")) {
+          finalSymbol = finalSymbol.replace("sus4", "");
+        } else if (finalSymbol.includes("add4")) {
+          finalSymbol = finalSymbol.replace("add4", "").replace("()", "");
+        } else if (finalSymbol.includes("4")) {
+          finalSymbol = finalSymbol.replace("4", "").replace("()", "");
+        }
+      }
+
+      // 3. Limpeza do baixo na terça (transformação em sus4)
+      if (!isFundamental && (bassRelative === 3 || bassRelative === 4) && isBassOnlyInBass) {
+        if (relativeSemitones.has(5)) {
+          if (finalSymbol === "7" || finalSymbol === "m7") {
+            finalSymbol = "7sus4";
+            const idx5 = tensions.indexOf(5);
+            if (idx5 > -1) tensions.splice(idx5, 1);
+          } else if (finalSymbol === "4" || finalSymbol === "add4") {
+            finalSymbol = "sus4";
+            const idx5 = tensions.indexOf(5);
+            if (idx5 > -1) tensions.splice(idx5, 1);
+          } else if (finalSymbol === "m(4)") {
+            finalSymbol = "sus4";
+            const idx5 = tensions.indexOf(5);
+            if (idx5 > -1) tensions.splice(idx5, 1);
+          } else if (finalSymbol === "" || finalSymbol === "m") {
+            finalSymbol = "sus4";
+            const idx5 = tensions.indexOf(5);
+            if (idx5 > -1) tensions.splice(idx5, 1);
+          }
+        }
+      }
+
+      // 4. Limpeza do baixo na nona
+      if (!isFundamental && bassRelative === 2) {
+        if (isBassOnlyInBass && finalSymbol.includes("add9")) {
+          finalSymbol = finalSymbol.replace("add9", "").replace("()", "");
+        }
+      }
+
       if (def.podeTerTensoes && (tensions.length > 0 || alterations.length > 0)) {
         // Ordena tensões/alterações na ordem musical: 9 -> 11 -> 13
         const sortedExtras = [...tensions, ...alterations].sort((a, b) => {
@@ -597,9 +696,29 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
         if (formattedExtras.length > 0) {
           if (finalSymbol.endsWith(')')) {
             const inside = finalSymbol.slice(finalSymbol.indexOf('(') + 1, -1);
-            const combined = [inside, ...formattedExtras].join(',');
-            finalSymbol = `${finalSymbol.slice(0, finalSymbol.indexOf('('))}(${combined})`;
+            const insideList = inside.split(',').map(s => s.trim()).filter(Boolean);
+            const combinedList = [...insideList, ...formattedExtras];
+            const tensionOrder = ["9b", "9", "9#", "11", "11#", "13b", "13"];
+            combinedList.sort((a, b) => tensionOrder.indexOf(a) - tensionOrder.indexOf(b));
+
+            // Remove o "9" se o "13" também estiver presente (ex: C7(11,13) em vez de C7(9,11,13))
+            if (def.quality !== "Meio-Diminuto" && def.quality !== "Menor") {
+              if (combinedList.includes("13") && combinedList.includes("9")) {
+                const idx9 = combinedList.indexOf("9");
+                if (idx9 > -1) combinedList.splice(idx9, 1);
+              }
+            }
+
+            finalSymbol = `${finalSymbol.slice(0, finalSymbol.indexOf('('))}(${combinedList.join(',')})`;
           } else {
+            // Remove o "9" se o "13" também estiver presente (ex: C7(11,13) em vez de C7(9,11,13))
+            if (def.quality !== "Meio-Diminuto" && def.quality !== "Menor") {
+              if (formattedExtras.includes("13") && formattedExtras.includes("9")) {
+                const idx9 = formattedExtras.indexOf("9");
+                if (idx9 > -1) formattedExtras.splice(idx9, 1);
+              }
+            }
+
             if (finalSymbol === "" && formattedExtras.length === 1 && formattedExtras[0] === "9") {
               finalSymbol = "9"; // Exibe C9 em vez de C(9) de forma mais elegante
             } else {
@@ -697,8 +816,34 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
 
   const detectedNames = Chord.detect(uniqueNotesWithBassFirst);
 
-  if (detectedNames.length > 0) {
-    const bestMatch = formatChordNameWithNotation(detectedNames[0], useFlat);
+  // Filtra nomes detectados que sejam power chords (quintas) invertidos com baixo na quinta (ex: C5/G)
+  const validDetectedNames = detectedNames.filter(name => {
+    const parts = name.split('/');
+    const baseSymbol = parts[0];
+    const bassSymbol = parts.length > 1 ? parts[1] : null;
+    if (!bassSymbol) return true; // Se não tem baixo invertido, é válido
+
+    const chordInfo = Chord.get(baseSymbol);
+    if (chordInfo.empty) return true;
+
+    const isPowerChord = chordInfo.type === 'fifth' || chordInfo.type === '5' || baseSymbol.endsWith('5');
+    if (isPowerChord) {
+      // Verifica se o baixo é a quinta justa do root
+      const rootChroma = Note.chroma(chordInfo.tonic || chordInfo.root || '');
+      const bassChroma = Note.chroma(bassSymbol);
+      if (rootChroma !== undefined && bassChroma !== undefined) {
+        const distance = (bassChroma - rootChroma + 12) % 12;
+        if (distance === 7) {
+          // É um X5/sua quinta! Vamos rejeitar
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  if (validDetectedNames.length > 0) {
+    const bestMatch = formatChordNameWithNotation(validDetectedNames[0], useFlat);
     const parts = bestMatch.split('/');
     const baseSymbol = parts[0];
     const bassFromDetect = parts.length > 1 ? parts[1] : null;
@@ -706,7 +851,7 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
     const chordInfo = Chord.get(baseSymbol);
     
     if (!chordInfo.empty) {
-      const root = getNoteNameWithNotation(chordInfo.root, useFlat);
+      const root = getNoteNameWithNotation(chordInfo.tonic || chordInfo.root || '', useFlat);
       const intervalsPT = chordInfo.intervals.map(translateInterval);
       const formula = chordInfo.intervals.join(' - ');
       const isFundamental = !bassFromDetect || Note.chroma(bassFromDetect) === Note.chroma(root);

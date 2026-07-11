@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChordAnalysis } from '../types';
 import { Music, Layers, Compass, Maximize2, Minimize2 } from 'lucide-react';
 
@@ -48,10 +48,13 @@ function getIntervalName(interval: number, temSetima: boolean, chordName?: strin
 
 interface ChordDetailsProps {
   analysis: ChordAnalysis | null;
+  activeNotesCount?: number;
   useFlat: boolean;
   setUseFlat: (flat: boolean) => void;
   useEasyMode: boolean;
   setUseEasyMode: (easy: boolean) => void;
+  onlyChords: boolean;
+  setOnlyChords: (only: boolean) => void;
 }
 
 // Retorna a unidade base (vw) para o tamanho da fonte do acorde na tela cheia de modo responsivo e fluido
@@ -102,12 +105,108 @@ function formatChordDisplay(chordName: string): string {
 }
 
 export default function ChordDetails({
-  analysis,
+  analysis: propAnalysis,
+  activeNotesCount = 0,
   useFlat,
   setUseFlat,
   useEasyMode,
   setUseEasyMode,
+  onlyChords,
+  setOnlyChords,
 }: ChordDetailsProps) {
+
+  const [displayedAnalysis, setDisplayedAnalysis] = useState<ChordAnalysis | null>(propAnalysis);
+  const [showAwaitingText, setShowAwaitingText] = useState(true);
+  const transitionDelay = 40; // Atraso fixo fora da UI para transição de notas em ms
+
+  const isPowerChordOr5th = (an: ChordAnalysis | null): boolean => {
+    if (!an) return false;
+    const name = (an.name || "").trim().toLowerCase();
+    const chordName = (an.chordName || "").trim().toLowerCase();
+    
+    return (
+      name.endsWith('5') || 
+      chordName.endsWith('5') || 
+      name.includes('quinta justa') || 
+      chordName.includes('(5p)') ||
+      chordName.includes('5ª justa')
+    );
+  };
+
+  const lastValidChordRef = useRef<ChordAnalysis | null>(null);
+  const releaseTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const isValidChord = (an: ChordAnalysis | null): boolean => {
+    if (!an) return false;
+    const type = (an.type || '').toLowerCase();
+    const name = (an.name || '').toLowerCase();
+    
+    // Ignora notas isoladas, intervalos harmônicos e análises sem nome de cifra válido
+    if (type.includes('nota única') || name.includes('nota isolada')) return false;
+    if (type.includes('intervalo') || name.includes('intervalo')) return false;
+    if (!an.chordName || an.chordName.trim() === '') return false;
+    
+    return true;
+  };
+
+  useEffect(() => {
+    // Limpa quaisquer timers pendentes sempre que houver novas notas ou mudanças de estado
+    if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+
+    if (activeNotesCount === 0) {
+      // 1. Aguarda 40ms (transition delay de transição) antes de confirmar que não há teclas ativas
+      releaseTimerRef.current = setTimeout(() => {
+        // Quando confirma que não há teclas ativas, limpamos o acorde e as notas imediatamente
+        setDisplayedAnalysis(null);
+        lastValidChordRef.current = null;
+        
+        // E mostramos o vazio (esconde o texto "Aguardando...")
+        setShowAwaitingText(false);
+
+        // Se passar o tempo de inatividade (15 segundos), mostramos o "Aguardando..." novamente.
+        idleTimerRef.current = setTimeout(() => {
+          setShowAwaitingText(true);
+        }, 15000); // 15 segundos de inatividade para mostrar "Aguardando..."
+      }, transitionDelay);
+    } else {
+      // Se houver alguma tecla pressionada:
+      // Oculta o "Aguardando..." imediatamente para quando voltar a ficar vazio
+      setShowAwaitingText(false);
+
+      const isX5 = isPowerChordOr5th(propAnalysis);
+      const isNewValid = isValidChord(propAnalysis) && !isX5;
+
+      if (isNewValid) {
+        // Se for um novo acorde válido (e não X5), atualiza imediatamente (sem delay)
+        setDisplayedAnalysis(propAnalysis);
+        lastValidChordRef.current = propAnalysis;
+      } else if (isX5) {
+        // Se for um acorde X5 (Power Chord / Quinta), aplicamos um atraso fixo de 60ms
+        // para evitar piscadas durante transições rápidas de dedos.
+        releaseTimerRef.current = setTimeout(() => {
+          setDisplayedAnalysis(propAnalysis);
+        }, 60); // 60ms de atraso fixo para X5 conforme solicitado
+      } else {
+        // Se não for um acorde completo/válido nem X5 (ex: transição em que sobrou apenas a nota do baixo)
+        if (lastValidChordRef.current) {
+          // Mantém o último acorde completo/válido na tela, evitando piscar "AGUARDANDO" ou a nota isolada
+          setDisplayedAnalysis(lastValidChordRef.current);
+        } else {
+          // Se não havia nenhum acorde válido anterior, exibe o que está sendo tocado (ex: nota isolada)
+          setDisplayedAnalysis(propAnalysis);
+        }
+      }
+    }
+
+    return () => {
+      if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [propAnalysis, activeNotesCount, transitionDelay]);
+
+  const analysis = displayedAnalysis;
 
   let rootName = '';
   let bassName = '';
@@ -118,7 +217,7 @@ export default function ChordDetails({
     rootName = analysis.root;
     bassName = analysis.bass;
 
-    const uniquePlayNotes = Array.from(new Set(analysis.notes.map(n => n.replace(/[0-9]/g, ''))));
+    const uniquePlayNotes = Array.from(new Set(analysis.notes.map(n => n.replace(/[0-9]/g, '')))) as string[];
     const intervalosTonica = uniquePlayNotes
       .map(note => calculateIntervalFromNoteNames(rootName, note))
       .filter(v => v !== -1);
@@ -209,51 +308,64 @@ export default function ChordDetails({
               Acorde
             </span>
 
-            {/* Controles de Cifra (Fácil & #/b & Fullscreen) */}
-            <div className="flex items-center space-x-2">
+            {/* Controles de Cifra (Fácil & Só Acordes & #/b & Fullscreen) */}
+            <div className="flex items-center space-x-1.5 h-7">
               {/* Botão de Modo Fácil (EASY) */}
               <button
                 onClick={() => setUseEasyMode(!useEasyMode)}
-                className={`px-2 py-0.5 text-[8px] font-mono uppercase border transition cursor-pointer select-none ${
+                className={`h-7 px-2 text-[9px] font-mono border transition cursor-pointer select-none flex items-center justify-center ${
                   useEasyMode
                     ? 'bg-accent/15 text-accent border-accent-border font-bold'
-                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85'
+                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85 hover:bg-white/10'
                 }`}
                 title="Modo Fácil: Oculta inversões de tríades simples para facilitar para iniciantes"
               >
                 EASY
               </button>
 
+              {/* Botão de apenas acordes (SÓ ACORDES) */}
+              <button
+                onClick={() => setOnlyChords(!onlyChords)}
+                className={`h-7 px-2 text-[9px] font-mono border transition cursor-pointer select-none flex items-center justify-center ${
+                  onlyChords
+                    ? 'bg-accent/15 text-accent border-accent-border font-bold'
+                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85 hover:bg-white/10'
+                }`}
+                title="Só Acordes: Exibe apenas acordes de 3 ou mais notas (oculta notas isoladas e intervalos)"
+              >
+                SÓ ACORDES
+              </button>
+
               {/* Seletor de Notação de Cifra (# / b) */}
-              <div className="flex bg-white/5 border border-white/10 p-0.5 rounded-none text-[9px] font-mono">
+              <div className="flex h-7 bg-white/5 border border-white/10 p-0.5 rounded-none text-[9px] font-mono items-center">
                 <button
                   onClick={() => setUseFlat(false)}
-                  className={`px-2.5 py-1 uppercase transition ${
+                  className={`h-6 px-2 transition flex items-center justify-center cursor-pointer select-none ${
                     !useFlat
-                      ? 'bg-accent/15 text-accent font-bold'
-                      : 'text-white/40 hover:text-white/85'
+                      ? 'bg-accent/15 text-accent font-bold text-[14px]'
+                      : 'text-white/40 hover:text-white/85 text-[11px]'
                   }`}
-                  title="Exibir com Sustenidos (#)"
+                  title="Exibir com Sustenidos (♯)"
                 >
-                  #
+                  ♯
                 </button>
                 <button
                   onClick={() => setUseFlat(true)}
-                  className={`px-2.5 py-1 uppercase transition ${
+                  className={`h-6 px-2 transition flex items-center justify-center cursor-pointer select-none ${
                     useFlat
-                      ? 'bg-accent/15 text-accent font-bold'
-                      : 'text-white/40 hover:text-white/85'
+                      ? 'bg-accent/15 text-accent font-bold text-[14px]'
+                      : 'text-white/40 hover:text-white/85 text-[11px]'
                   }`}
-                  title="Exibir com Bemóis (b)"
+                  title="Exibir com Bemóis (♭)"
                 >
-                  b
+                  ♭
                 </button>
               </div>
 
               {/* Botão Tela Cheia (Fullscreen) */}
               <button
                 onClick={() => setIsFullscreen(true)}
-                className="bg-white/5 hover:bg-white/10 p-1.5 border border-white/10 text-white/40 hover:text-white transition-all cursor-pointer rounded-none flex items-center justify-center"
+                className="h-7 w-7 bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white transition-all cursor-pointer rounded-none flex items-center justify-center"
                 title="Exibir em tela cheia (Atalho: ESC para sair)"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
@@ -272,7 +384,7 @@ export default function ChordDetails({
                   {cleanChordDescription(analysis.name)}
                 </p>
               </div>
-            ) : (
+            ) : showAwaitingText ? (
               <div>
                 <h1 className="text-2xl sm:text-3xl font-medium font-sans tracking-tight text-white/20 uppercase truncate">
                   Aguardando...
@@ -281,6 +393,9 @@ export default function ChordDetails({
                   Toque notas para identificar acordes.
                 </p>
               </div>
+            ) : (
+              /* Vazio durante o intervalo de 15s */
+              <div className="h-[52px]" />
             )}
           </div>
         </div>
@@ -333,11 +448,14 @@ export default function ChordDetails({
                     <span className="w-1.5 h-1.5 bg-accent" />
                   </div>
                 ))
-              ) : (
+              ) : showAwaitingText ? (
                 /* Placeholder estável */
                 <div className="text-white/20 font-mono text-[9px] uppercase tracking-wider text-center select-none pointer-events-none py-2">
                   Toque notas para analisar escalas
                 </div>
+              ) : (
+                /* Vazio durante o intervalo de 15s */
+                <div className="h-6" />
               )}
             </div>
           </div>
@@ -358,20 +476,20 @@ export default function ChordDetails({
 
             <div className="flex items-center space-x-3">
               {/* Seletor de Tamanho da Fonte */}
-              <div className="flex bg-white/5 border border-white/10 p-0.5 text-[10px] font-mono items-center">
+              <div className="flex h-9 bg-white/5 border border-white/10 p-0.5 text-[11px] font-mono items-center">
                 <button
                   onClick={() => setFsFontScale(prev => Math.max(0.4, Number((prev - 0.1).toFixed(2))))}
-                  className="px-2.5 py-1 text-white/40 hover:text-white transition cursor-pointer font-bold select-none"
+                  className="h-7 px-2.5 text-white/40 hover:text-white transition cursor-pointer font-bold select-none flex items-center justify-center"
                   title="Diminuir Fonte"
                 >
                   A-
                 </button>
-                <span className="px-2 py-1 text-accent font-medium select-none border-x border-white/5 min-w-[45px] text-center">
+                <span className="h-7 px-2 text-accent font-medium select-none border-x border-white/5 min-w-[45px] text-center flex items-center justify-center">
                   {Math.round(fsFontScale * 100)}%
                 </span>
                 <button
                   onClick={() => setFsFontScale(prev => Math.min(3.0, Number((prev + 0.1).toFixed(2))))}
-                  className="px-2.5 py-1 text-white/40 hover:text-white transition cursor-pointer font-bold select-none"
+                  className="h-7 px-2.5 text-white/40 hover:text-white transition cursor-pointer font-bold select-none flex items-center justify-center"
                   title="Aumentar Fonte"
                 >
                   A+
@@ -381,43 +499,57 @@ export default function ChordDetails({
               {/* Controles de Cifra no Fullscreen */}
               <button
                 onClick={() => setUseEasyMode(!useEasyMode)}
-                className={`px-3 py-1 text-[10px] font-mono uppercase border transition cursor-pointer select-none ${
+                className={`h-9 px-3.5 text-[11px] font-mono border transition cursor-pointer select-none flex items-center justify-center ${
                   useEasyMode
                     ? 'bg-accent/15 text-accent border-accent-border font-bold'
-                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85'
+                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85 hover:bg-white/10'
                 }`}
                 title="Modo Fácil"
               >
                 EASY
               </button>
 
-              <div className="flex bg-white/5 border border-white/10 p-0.5 text-[10px] font-mono">
+              <button
+                onClick={() => setOnlyChords(!onlyChords)}
+                className={`h-9 px-3.5 text-[11px] font-mono border transition cursor-pointer select-none flex items-center justify-center ${
+                  onlyChords
+                    ? 'bg-accent/15 text-accent border-accent-border font-bold'
+                    : 'bg-white/5 text-white/40 border-white/10 hover:text-white/85 hover:bg-white/10'
+                }`}
+                title="Só Acordes: Exibe apenas acordes de 3 ou mais notas"
+              >
+                SÓ ACORDES
+              </button>
+
+              <div className="flex h-9 bg-white/5 border border-white/10 p-0.5 rounded-none text-[11px] font-mono items-center">
                 <button
                   onClick={() => setUseFlat(false)}
-                  className={`px-3 py-1 uppercase transition ${
+                  className={`h-7 px-3.5 transition flex items-center justify-center cursor-pointer select-none ${
                     !useFlat
-                      ? 'bg-accent/15 text-accent font-bold'
-                      : 'text-white/40 hover:text-white/85'
+                      ? 'bg-accent/15 text-accent font-bold text-[18px]'
+                      : 'text-white/40 hover:text-white/85 text-[13px]'
                   }`}
+                  title="Exibir com Sustenidos (♯)"
                 >
-                  #
+                  ♯
                 </button>
                 <button
                   onClick={() => setUseFlat(true)}
-                  className={`px-3 py-1 uppercase transition ${
+                  className={`h-7 px-3.5 transition flex items-center justify-center cursor-pointer select-none ${
                     useFlat
-                      ? 'bg-accent/15 text-accent font-bold'
-                      : 'text-white/40 hover:text-white/85'
+                      ? 'bg-accent/15 text-accent font-bold text-[18px]'
+                      : 'text-white/40 hover:text-white/85 text-[13px]'
                   }`}
+                  title="Exibir com Bemóis (♭)"
                 >
-                  b
+                  ♭
                 </button>
               </div>
 
               {/* Botão de Fechar */}
               <button
                 onClick={() => setIsFullscreen(false)}
-                className="bg-accent hover:bg-accent-hover text-black px-4 py-1.5 text-xs font-mono font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center space-x-1.5"
+                className="h-9 bg-accent hover:bg-accent-hover text-black px-4 text-xs font-mono font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center space-x-1.5"
                 title="Sair da tela cheia (ESC)"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
@@ -441,7 +573,7 @@ export default function ChordDetails({
                   {cleanChordDescription(analysis.name)}
                 </p>
               </div>
-            ) : (
+            ) : showAwaitingText ? (
               <div className="space-y-4">
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-medium font-sans tracking-tight text-white/15 uppercase animate-pulse">
                   Aguardando notas...
@@ -450,6 +582,9 @@ export default function ChordDetails({
                   Toque um acorde para exibição gigante
                 </p>
               </div>
+            ) : (
+              /* Vazio durante o intervalo de 15s */
+              <div className="h-20" />
             )}
           </div>
 
@@ -492,8 +627,11 @@ export default function ChordDetails({
                       {scale}
                     </span>
                   ))
-                ) : (
+                ) : showAwaitingText ? (
                   <span className="text-xs text-white/20 font-mono py-1">Aguardando análise de acorde para sugerir escalas...</span>
+                ) : (
+                  /* Vazio durante o intervalo de 15s */
+                  <span className="text-xs text-white/5 font-mono py-1">—</span>
                 )}
               </div>
             </div>

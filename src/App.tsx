@@ -46,6 +46,11 @@ export default function App() {
     return localStorage.getItem('midi_analyzer_easy_mode') === 'true';
   });
 
+  // Habilitar a exibição apenas de acordes (ocultar notas isoladas e intervalos de 2 notas)
+  const [onlyChords, setOnlyChords] = useState<boolean>(() => {
+    return localStorage.getItem('midi_analyzer_only_chords') === 'true';
+  });
+
   // Seletor de Tema de Cores (Ciano, Verde, Amarelo, Rosa, Laranja)
   const [accentId, setAccentId] = useState<string>(() => {
     return localStorage.getItem('midi_analyzer_accent') || 'cyan';
@@ -61,6 +66,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('midi_analyzer_easy_mode', String(useEasyMode));
   }, [useEasyMode]);
+
+  // Sincronizar preferência de apenas acordes no local storage
+  useEffect(() => {
+    localStorage.setItem('midi_analyzer_only_chords', String(onlyChords));
+  }, [onlyChords]);
 
   // Aplicar cores dinâmicas no tema por meio de CSS variables
   useEffect(() => {
@@ -191,11 +201,11 @@ export default function App() {
     synth.allNotesOff();
   };
 
-  // Análise do acorde com base nas notas ativas, notação preferida e Modo Fácil
+  // Análise do acorde com base nas notas ativas, notação preferida, Modo Fácil e modo apenas acordes
   const chordAnalysis = useMemo(() => {
     const midiNumbers = activeNotes.map(n => n.midi);
-    return analyzePlayedNotes(midiNumbers, useFlat, useEasyMode);
-  }, [activeNotes, useFlat, useEasyMode]);
+    return analyzePlayedNotes(midiNumbers, useFlat, useEasyMode, onlyChords);
+  }, [activeNotes, useFlat, useEasyMode, onlyChords]);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col antialiased">
@@ -287,10 +297,13 @@ export default function App() {
               <section id="chord-analysis-section">
                 <ChordDetails
                   analysis={chordAnalysis}
+                  activeNotesCount={activeNotes.length}
                   useFlat={useFlat}
                   setUseFlat={setUseFlat}
                   useEasyMode={useEasyMode}
                   setUseEasyMode={setUseEasyMode}
+                  onlyChords={onlyChords}
+                  setOnlyChords={setOnlyChords}
                 />
               </section>
             </div>
