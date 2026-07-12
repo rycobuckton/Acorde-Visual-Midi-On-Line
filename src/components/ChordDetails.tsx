@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChordAnalysis } from '../types';
-import { Music, Layers, Compass, Maximize2, Minimize2, Upload, Trash2, Image, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { Music, Layers, Compass, Maximize2, Minimize2, Upload, Trash2, Image, ChevronLeft, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
 
 function calculateIntervalFromNoteNames(note1: string, note2: string): number {
   if (!note1 || !note2) return -1;
@@ -549,8 +549,8 @@ export default function ChordDetails({
 
   return (
     <div translate="no" className="notranslate w-full flex flex-col space-y-3">
-      {/* PAINEL 1: NOME DO ACORDE (Destaque Principal - Altura Confortável) */}
-      <div className="bg-[#0D0D0D] border border-white/10 p-5 flex flex-col justify-between relative overflow-hidden h-[290px] max-h-[290px] select-none">
+      {/* PAINEL 1: NOME DO ACORDE (Destaque Principal - Altura Estendida) */}
+      <div className="bg-[#0D0D0D] border border-white/10 p-4 pt-3 pb-3.5 flex flex-col justify-between relative overflow-hidden h-[265px] max-h-[265px] select-none">
         {/* Massive watermark background chord name */}
         {analysis && (
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none">
@@ -560,7 +560,7 @@ export default function ChordDetails({
           </div>
         )}
 
-        <div className="relative z-10 w-full">
+        <div className="relative z-10 w-full flex flex-col h-full justify-between">
           <div className="flex justify-between items-center mb-1">
             <span className="text-[10px] font-mono tracking-[0.25em] text-white/40 uppercase flex items-center">
               <Music className="w-3.5 h-3.5 text-accent mr-1.5" />
@@ -569,22 +569,7 @@ export default function ChordDetails({
 
             {/* Controles de Cifra */}
             <div className="flex items-center space-x-1.5 h-7">
-              {/* 1. Carregador de Cifra (Arquivos) - Primeiro à esquerda */}
-              <div className="flex items-center h-7 bg-white/5 border border-white/10 p-0.5 text-[9px] font-mono">
-                <label className="h-6 px-2.5 hover:text-accent text-white/40 flex items-center justify-center cursor-pointer gap-1 transition select-none" title="Carregar arquivo(s) de cifra / partitura">
-                  <Upload className="w-3 h-3 text-accent" />
-                  <span>ARQUIVOS</span>
-                  <input 
-                    type="file" 
-                    accept=".pdf,image/png,image/jpeg,image/webp,image/bmp,image/gif,image/*" 
-                    multiple 
-                    onChange={handleImageUpload} 
-                    className="hidden" 
-                  />
-                </label>
-              </div>
-
-              {/* 2. Botão de Modo Fácil (EASY) */}
+              {/* 1. Botão de Modo Fácil (EASY) */}
               <button
                 onClick={() => setUseEasyMode(!useEasyMode)}
                 className={`h-7 px-2 text-[9px] font-mono border transition cursor-pointer select-none flex items-center justify-center ${
@@ -597,7 +582,7 @@ export default function ChordDetails({
                 EASY
               </button>
 
-              {/* 3. Botão de apenas acordes (SÓ ACORDES) */}
+              {/* 2. Botão de apenas acordes (SÓ ACORDES) */}
               <button
                 onClick={() => setOnlyChords(!onlyChords)}
                 className={`h-7 px-2 text-[9px] font-mono border transition cursor-pointer select-none flex items-center justify-center ${
@@ -610,7 +595,7 @@ export default function ChordDetails({
                 SÓ ACORDES
               </button>
 
-              {/* 4. Seletor de Notação de Cifra (# / b) */}
+              {/* 3. Seletor de Notação de Cifra (# / b) */}
               <div className="flex h-7 bg-white/5 border border-white/10 p-0.5 rounded-none text-[9px] font-mono items-center">
                 <button
                   onClick={() => setUseFlat(false)}
@@ -636,37 +621,38 @@ export default function ChordDetails({
                 </button>
               </div>
 
-              {/* 5. Botão Tela Cheia (Fullscreen) */}
+              {/* 4. Botão Modo Leitura de Cifras (Tela Cheia) */}
               <button
                 onClick={() => setIsFullscreen(true)}
-                className="h-7 w-7 bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white transition-all cursor-pointer rounded-none flex items-center justify-center"
-                title="Exibir em tela cheia (Atalho: ESC para sair)"
+                className="h-7 px-2.5 bg-accent/10 hover:bg-accent/20 border border-accent/30 hover:border-accent text-accent hover:text-accent-hover transition-all cursor-pointer rounded-none flex items-center space-x-1.5"
+                title="Abrir cifras para tocar em tela cheia (Atalho: ESC para sair)"
               >
-                <Maximize2 className="w-3.5 h-3.5" />
+                <BookOpen className="w-4 h-4 text-accent animate-pulse" style={{ animationDuration: '3s' }} />
+                <span className="text-[9px] font-mono font-bold tracking-wider uppercase">CIFRAS</span>
               </button>
             </div>
           </div>
 
-          {/* Container de texto com altura confortável */}
-          <div className="mt-1 h-[110px] flex flex-col justify-center">
+          {/* Container de texto auto-ajustável */}
+          <div className="mt-0 flex-1 flex flex-col justify-center">
             {analysis ? (
               <div className="flex flex-col justify-center">
-                <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-sans tracking-tight text-accent truncate">
+                <h1 className="text-7xl sm:text-8xl md:text-[5.5rem] font-normal font-sans tracking-tight text-accent truncate leading-none">
                   {formatChordDisplay(analysis.chordName)}
                 </h1>
                 
                 {/* Intervalos Empilhados abaixo do Acorde */}
-                <div className="flex flex-wrap gap-2 mt-3 items-center">
+                <div className="flex flex-wrap gap-1.5 mt-1 items-center">
                   {/* Tônica & Intervalos */}
                   {rootName && (
-                    <div className="px-2.5 py-1 bg-accent/10 border border-accent/20 font-mono text-[11px] md:text-[12px] text-accent flex items-center gap-2 rounded-sm">
-                      <span className="text-accent/60 uppercase tracking-wider text-[9px] font-bold">Tônica:</span>
-                      <strong className="text-accent font-black text-sm">{rootName}</strong>
+                    <div className="px-2 py-0.5 bg-accent/10 border border-accent/20 font-mono text-[10px] md:text-[11px] text-accent flex items-center gap-1.5 rounded-sm">
+                      <span className="text-accent/60 uppercase tracking-wider text-[8px] font-bold">Tônica:</span>
+                      <strong className="text-accent font-black text-xs">{rootName}</strong>
                       <div className="flex gap-1 ml-1">
                         {tonicIntervals.map((name, i) => (
                           <span
                             key={i}
-                            className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-bold font-mono ${
+                            className={`px-1 py-0.5 rounded-sm text-[9px] md:text-[10px] font-bold font-mono ${
                               name === 'T'
                                 ? 'bg-accent/25 text-accent border border-accent/30'
                                 : 'bg-white/10 text-white/95'
@@ -681,75 +667,63 @@ export default function ChordDetails({
 
                   {/* Baixo (se invertido) */}
                   {bassName && rootName && bassName !== rootName && (
-                    <div className="px-2.5 py-1 bg-white/5 border border-white/10 font-mono text-[11px] md:text-[12px] text-white/70 flex items-center rounded-sm">
-                      <span className="text-white/40 uppercase tracking-wider text-[9px] font-bold mr-1.5">Baixo:</span>
-                      <strong className="text-white font-black text-sm">{bassName}</strong>
+                    <div className="px-2 py-0.5 bg-white/5 border border-white/10 font-mono text-[10px] md:text-[11px] text-white/70 flex items-center rounded-sm">
+                      <span className="text-white/40 uppercase tracking-wider text-[8px] font-bold mr-1">Baixo:</span>
+                      <strong className="text-white font-black text-xs">{bassName}</strong>
                     </div>
                   )}
 
                   {/* Alerta de 5ª Omitida */}
                   {showFifthOmitted && (
-                    <div className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 font-mono text-[11px] md:text-[12px] font-bold text-emerald-400 uppercase tracking-wider flex items-center rounded-sm">
-                      <span className="mr-1 text-[12px]">✔️</span> 5ª Omitida
+                    <div className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 font-mono text-[10px] md:text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center rounded-sm">
+                      <span className="mr-1 text-[11px]">✔️</span> 5ª Omitida
                     </div>
                   )}
                 </div>
+
+                {/* Linha de NOTAS alinhada na horizontal */}
+                <div className="mt-1.5 text-[11px] md:text-[12px] font-mono uppercase tracking-wider text-white/40">
+                  NOTAS: <span className="text-white/85 font-normal">{analysis.notes.join(', ')}</span>
+                </div>
+
+                {/* DESCRIÇÃO com a formatação inicial e fonte aumentada */}
+                {analysis.name && (
+                  <p className="text-sm md:text-[15px] text-white/80 font-sans mt-2 leading-relaxed">
+                    {analysis.name}
+                  </p>
+                )}
               </div>
             ) : showAwaitingText ? (
               <div>
-                <h1 className="text-3xl sm:text-4xl font-medium font-sans tracking-tight text-white/20 uppercase truncate">
+                <h1 className="text-3xl sm:text-4xl font-normal font-sans tracking-tight text-white/20 uppercase truncate leading-none">
                   Aguardando...
                 </h1>
-                <p className="text-[12px] text-white/30 tracking-[0.1em] mt-1.5 font-sans leading-relaxed">
+                <p className="text-[11px] text-white/30 tracking-[0.1em] mt-1.5 font-sans leading-relaxed">
                   Toque notas para identificar acordes.
                 </p>
               </div>
             ) : (
               /* Vazio durante o intervalo de 15s */
-              <div className="h-[52px]" />
+              <div className="h-[72px]" />
             )}
-          </div>
-        </div>
-
-        {/* Detalhes Técnicos Rápidos */}
-        <div className="grid grid-cols-3 gap-2.5 border-t border-white/10 pt-3 relative z-10 w-full mt-auto">
-          <div className="bg-white/5 p-2 flex flex-col justify-center items-center text-center rounded-sm">
-            <span className="text-[10px] font-mono text-white/45 uppercase tracking-wider font-bold">Tônica</span>
-            <span className="text-[15px] md:text-[16px] font-mono font-extrabold text-accent mt-0.5 truncate max-w-full">
-              {analysis ? analysis.root : '—'}
-            </span>
-          </div>
-          
-          <div className="bg-white/5 p-2 flex flex-col justify-center items-center text-center rounded-sm">
-            <span className="text-[10px] font-mono text-white/45 uppercase tracking-wider font-bold">Baixo</span>
-            <span className="text-[15px] md:text-[16px] font-mono font-extrabold text-white/90 mt-0.5 truncate max-w-full">
-              {analysis ? analysis.bass : '—'}
-            </span>
-          </div>
-
-          <div className="bg-white/5 p-2 flex flex-col justify-center items-center text-center rounded-sm">
-            <span className="text-[10px] font-mono text-white/45 uppercase tracking-wider font-bold">Notas</span>
-            <span className="text-[13px] md:text-[14px] font-mono font-extrabold text-white mt-0.5 truncate max-w-full">
-              {analysis ? analysis.notes.join(', ') : '—'}
-            </span>
           </div>
         </div>
       </div>
 
       {/* PAINEL 2: ESCALAS RECOMENDADAS (Na mesma linha horizontal) */}
-      <div className="bg-[#0D0D0D] border border-white/10 p-4 flex flex-col justify-center min-h-[78px] max-h-[85px] overflow-hidden">
+      <div className="bg-[#0D0D0D] border border-white/10 p-4 flex flex-col justify-center h-[90px] max-h-[90px] overflow-hidden">
         <div>
           <h3 className="text-[9px] font-mono tracking-[0.2em] text-white/40 uppercase flex items-center mb-1.5">
             <Compass className="w-3.5 h-3.5 text-accent mr-2" />
             Escalas para Improviso
           </h3>
 
-          <div className="flex flex-wrap gap-2 items-center">
-            {analysis ? (
+          <div className="flex flex-wrap gap-2 items-center min-h-[28px]">
+            {analysis && analysis.scales && analysis.scales.length > 0 ? (
               analysis.scales.slice(0, 3).map((scale, idx) => (
                 <div
                   key={`scale-${idx}`}
-                  className="flex items-center space-x-1.5 bg-white/5 border border-white/5 px-2.5 py-1 hover:border-white/10 transition rounded-sm"
+                  className="flex items-center space-x-1.5 bg-white/5 border border-white/5 px-2.5 py-1 hover:border-white/10 transition rounded-sm h-[28px]"
                 >
                   <span className="text-[10px] font-medium text-white/80 uppercase tracking-wider font-mono">
                     {scale}
@@ -757,14 +731,13 @@ export default function ChordDetails({
                   <span className="w-1.5 h-1.5 bg-accent" />
                 </div>
               ))
-            ) : showAwaitingText ? (
-              /* Placeholder estável */
-              <div className="text-white/20 font-mono text-[9px] uppercase tracking-wider select-none pointer-events-none py-1">
-                Toque notas para analisar escalas
-              </div>
             ) : (
-              /* Vazio durante o intervalo de 15s */
-              <div className="h-4" />
+              /* Placeholder estável com exatamente a mesma altura dos itens de escala */
+              <div className="flex items-center h-[28px]">
+                <span className="text-white/20 font-mono text-[9px] uppercase tracking-wider select-none pointer-events-none">
+                  {showAwaitingText ? "Toque notas para analisar escalas" : "—"}
+                </span>
+              </div>
             )}
           </div>
         </div>
@@ -1016,7 +989,12 @@ export default function ChordDetails({
                 </div>
               </div>
             ) : (
-              <div className="w-full h-full bg-[#070707]" />
+              <div className="w-full h-full bg-[#070707] flex flex-col items-center justify-center p-6 text-center select-none">
+                <BookOpen className="w-12 h-12 text-white/10 mb-4 animate-pulse" style={{ animationDuration: '4s' }} />
+                <p className="text-white/40 text-sm font-sans max-w-md leading-relaxed">
+                  Nenhuma cifra carregada. Clique no botão <strong className="text-accent/80 font-mono">ARQUIVOS</strong> na barra superior para carregar suas imagens ou PDFs de cifras e tocar acompanhando em tempo real!
+                </p>
+              </div>
             )}
           </div>
 

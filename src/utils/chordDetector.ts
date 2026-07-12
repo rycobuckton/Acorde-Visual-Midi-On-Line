@@ -788,7 +788,9 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
     const isTriad = bestMatch.definition.intervals.length === 3;
     const hideInversionName = useEasyMode && isTriad && !bestMatch.isFundamental;
 
-    let descriptiveName = `Acorde de ${rootNamePT} ${chordTitleName}`;
+    const parsedSymbolMatch = bestMatch.displayChordName.split('/');
+    const symbolWithoutBass = parsedSymbolMatch[0].substring(root.length);
+    let descriptiveName = getFullChordDescriptionPT(root, symbolWithoutBass);
     if (hideInversionName) {
       descriptiveName += ` (Inversão Omitida para Iniciantes)`;
     } else if (!bestMatch.isFundamental) {
@@ -872,10 +874,17 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
       const rootPT = noteToPT(root);
       const suggestedScales: string[] = [`${rootPT} Maior`, `Pentatônica de ${rootPT}`];
 
+      const parsedSymbolMatch = displayChordName.split('/');
+      const symbolWithoutBass = parsedSymbolMatch[0].substring(root.length);
+      let descriptiveName = getFullChordDescriptionPT(root, symbolWithoutBass);
+      if (!actualIsFundamental) {
+        descriptiveName += ` (Invertido com Baixo em ${noteToPT(bassFromDetect || root)})`;
+      } else {
+        descriptiveName += ` (Fundamental)`;
+      }
+
       return {
-        name: !actualIsFundamental 
-          ? `Acorde: Acorde ${translateChordType(chordInfo.type)} (Invertido com Baixo em ${noteToPT(bassFromDetect || root)})`
-          : `Acorde: Acorde ${translateChordType(chordInfo.type)}`,
+        name: descriptiveName,
         chordName: displayChordName,
         formula: formula,
         intervals: intervalsPT,
@@ -904,4 +913,87 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
     type: 'Sons Avulsos',
     scales: [`Escala de ${noteToPT(bassNote)} Cromática`, `Escala Pentatônica de ${noteToPT(bassNote)}`],
   };
+};
+
+// Gera descrição ultra completa em português, incluindo as tensões dinâmicas (9, 11, 13) que foram detectadas
+export const getFullChordDescriptionPT = (root: string, symbol: string): string => {
+  const rootPT = noteToPT(root);
+  
+  if (!symbol) return `Acorde de ${rootPT} Maior`;
+
+  // Extrair o conteúdo dos parênteses se houver
+  const parenMatch = symbol.match(/\(([^)]+)\)/);
+  let baseSymbol = symbol;
+  let tensions: string[] = [];
+  
+  if (parenMatch) {
+    baseSymbol = symbol.slice(0, symbol.indexOf('('));
+    tensions = parenMatch[1].split(',').map(t => t.trim()).filter(Boolean);
+  }
+
+  let basePT = "";
+  if (baseSymbol === "") basePT = "Maior";
+  else if (baseSymbol === "m") basePT = "Menor";
+  else if (baseSymbol === "7") basePT = "com Sétima";
+  else if (baseSymbol === "7M") basePT = "Maior com Sétima Maior";
+  else if (baseSymbol === "m7") basePT = "Menor com Sétima";
+  else if (baseSymbol === "m7M") basePT = "Menor com Sétima Maior";
+  else if (baseSymbol === "m7b5") basePT = "Meio-Diminuto";
+  else if (baseSymbol === "°") basePT = "Diminuto";
+  else if (baseSymbol === "°7") basePT = "Diminuto com Sétima";
+  else if (baseSymbol === "6") basePT = "Maior com Sexta";
+  else if (baseSymbol === "m6") basePT = "Menor com Sexta";
+  else if (baseSymbol === "sus4") basePT = "Suspenso 4";
+  else if (baseSymbol === "sus2") basePT = "Suspenso 2";
+  else if (baseSymbol === "7sus4") basePT = "Suspenso com Sétima";
+  else if (baseSymbol === "5#") basePT = "Aumentado";
+  else if (baseSymbol === "5b") basePT = "Maior com Quinta Diminuta";
+  else {
+    basePT = translateChordType(baseSymbol) || baseSymbol;
+  }
+
+  const tensionTranslation: Record<string, string> = {
+    "9b": "nona bemol",
+    "9": "nona",
+    "9#": "nona aumentada",
+    "11": "décima primeira",
+    "11#": "décima primeira aumentada",
+    "13b": "décima terceira bemol",
+    "13": "décima terceira",
+    "add9": "nona adicionada",
+    "add11": "décima primeira adicionada",
+    "add4": "quarta adicionada",
+  };
+
+  const translatedTensions = tensions.map(t => tensionTranslation[t] || t);
+
+  let fullDescription = `Acorde de ${rootPT}`;
+  if (basePT === "Maior" || basePT === "Menor" || basePT === "Meio-Diminuto" || basePT === "Diminuto" || basePT === "Aumentado") {
+    fullDescription += ` ${basePT}`;
+    if (translatedTensions.length > 0) {
+      if (translatedTensions.length === 1) {
+        fullDescription += ` com ${translatedTensions[0]}`;
+      } else {
+        const last = translatedTensions.pop();
+        fullDescription += ` com ${translatedTensions.join(', ')} e ${last}`;
+      }
+    }
+  } else if (basePT.includes("com")) {
+    fullDescription += ` ${basePT}`;
+    if (translatedTensions.length > 0) {
+      if (translatedTensions.length === 1) {
+        fullDescription += ` e ${translatedTensions[0]}`;
+      } else {
+        const last = translatedTensions.pop();
+        fullDescription += `, ${translatedTensions.join(', ')} e ${last}`;
+      }
+    }
+  } else {
+    fullDescription += ` ${basePT}`;
+    if (translatedTensions.length > 0) {
+      fullDescription += ` (${translatedTensions.join(', ')})`;
+    }
+  }
+
+  return fullDescription;
 };
