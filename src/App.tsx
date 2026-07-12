@@ -51,9 +51,9 @@ export default function App() {
     return localStorage.getItem('midi_analyzer_only_chords') === 'true';
   });
 
-  // Seletor de Tema de Cores (Ciano, Verde, Amarelo, Rosa, Laranja)
-  const [accentId, setAccentId] = useState<string>(() => {
-    return localStorage.getItem('midi_analyzer_accent') || 'cyan';
+  // Cor de Destaque Personalizada (Ciano por padrão)
+  const [accentColor, setAccentColor] = useState<string>(() => {
+    return localStorage.getItem('midi_analyzer_accent_color') || '#00F0FF';
   });
 
   // Modal informativo sobre o projeto
@@ -74,19 +74,19 @@ export default function App() {
 
   // Aplicar cores dinâmicas no tema por meio de CSS variables
   useEffect(() => {
-    const ACCENT_COLORS = [
-      { id: 'cyan', hex: '#00F0FF', dim: 'rgba(0, 240, 255, 0.15)', border: 'rgba(0, 240, 255, 0.5)' },
-      { id: 'green', hex: '#00FF66', dim: 'rgba(0, 255, 102, 0.15)', border: 'rgba(0, 255, 102, 0.5)' },
-      { id: 'yellow', hex: '#FACC15', dim: 'rgba(250, 204, 21, 0.15)', border: 'rgba(250, 204, 21, 0.5)' },
-      { id: 'pink', hex: '#FF007F', dim: 'rgba(255, 0, 127, 0.15)', border: 'rgba(255, 0, 127, 0.5)' },
-      { id: 'orange', hex: '#FF6600', dim: 'rgba(255, 102, 0, 0.15)', border: 'rgba(255, 102, 0, 0.5)' },
-    ];
-    const accent = ACCENT_COLORS.find(a => a.id === accentId) || ACCENT_COLORS[0];
-    document.documentElement.style.setProperty('--accent', accent.hex);
-    document.documentElement.style.setProperty('--accent-dim', accent.dim);
-    document.documentElement.style.setProperty('--accent-border', accent.border);
-    localStorage.setItem('midi_analyzer_accent', accentId);
-  }, [accentId]);
+    const hexToRgba = (hex: string, alpha: number): string => {
+      const cleanHex = hex.replace('#', '');
+      const r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+      const g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+      const b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    document.documentElement.style.setProperty('--accent', accentColor);
+    document.documentElement.style.setProperty('--accent-dim', hexToRgba(accentColor, 0.15));
+    document.documentElement.style.setProperty('--accent-border', hexToRgba(accentColor, 0.5));
+    localStorage.setItem('midi_analyzer_accent_color', accentColor);
+  }, [accentColor]);
 
   // Sincronizar estados do synth com o singleton e o localStorage de forma ordenada
   useEffect(() => {
@@ -209,33 +209,68 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col antialiased">
-      {/* Header Principal */}
-      <header className="border-b border-white/10 bg-[#0D0D0D] sticky top-0 z-30 px-6 py-4">
-        <div className="w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-8 h-8 bg-accent shadow-[0_0_12px_var(--accent)] flex items-center justify-center">
-              <Music className="w-4 h-4 text-black font-extrabold" />
-            </div>
-            <div>
+      {/* Header Principal - Não Fixo (sem sticky/top-0) */}
+      <header className="border-b border-white/10 bg-[#0D0D0D] px-6 py-4">
+        <div className="w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto flex flex-row flex-wrap items-center gap-x-6 gap-y-4 justify-between">
+          
+          {/* Grupo Esquerdo: Analisador MIDI, Real-time, Coração, Café, Contribuição */}
+          <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-3">
+            
+            {/* 1. ANALISADOR MIDI e REAL-TIME */}
+            <div className="flex items-center space-x-3 shrink-0">
+              <div className="w-8 h-8 bg-accent shadow-[0_0_12px_var(--accent)] flex items-center justify-center shrink-0">
+                <Music className="w-4 h-4 text-black font-extrabold" />
+              </div>
               <div className="flex items-center space-x-2.5">
-                <h1 className="text-sm font-bold tracking-[0.25em] text-white uppercase font-mono">Analisador MIDI</h1>
-                <span className="text-[9px] font-mono bg-accent-dim text-accent border border-accent-border px-2 py-0.5 font-bold uppercase tracking-widest">
+                <h1 className="text-sm font-bold tracking-[0.25em] text-white uppercase font-mono shrink-0">Analisador MIDI</h1>
+                <span className="text-[9px] font-mono bg-accent-dim text-accent border border-accent-border px-2 py-0.5 font-bold uppercase tracking-widest shrink-0">
                   Real-time
                 </span>
               </div>
-              <p className="text-[10px] text-white/40 font-mono uppercase tracking-wider mt-0.5">Teclado Bluetooth & Partitura Dinâmica</p>
             </div>
+
+            {/* Separador vertical sutil em telas maiores */}
+            <div className="hidden lg:block w-px h-5 bg-white/10" />
+
+            {/* 2, 3, 4. CORAÇÃO, CAFE e CONTRIBUIÇÃO (PIX) */}
+            <div className="flex items-center gap-x-3 gap-y-2 flex-wrap shrink-0">
+              <div className="flex items-center space-x-1.5 shrink-0">
+                <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" title="Coração" />
+                <Coffee className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Café" />
+                <span className="font-sans text-xs text-white/90">Contribuir Pix:</span>
+              </div>
+              <div className="flex items-center bg-black/40 border border-white/10 rounded overflow-hidden shrink-0">
+                <span className="px-3 py-1 font-mono text-xs text-accent select-all cursor-text font-bold">
+                  rycobuckton@gmail.com
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('rycobuckton@gmail.com');
+                    setCopiedPix(true);
+                    setTimeout(() => setCopiedPix(false), 2000);
+                  }}
+                  className="bg-white/5 hover:bg-white/10 px-2.5 py-1 border-l border-white/10 text-white/60 hover:text-white transition-all font-mono text-[10px] uppercase tracking-wider font-bold cursor-pointer min-w-[75px] text-center"
+                >
+                  {copiedPix ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
+              <span className="text-white/40 font-sans text-xs shrink-0 hidden sm:inline">
+                (Luiz H. Buckton P.)
+              </span>
+            </div>
+
           </div>
 
-          <div className="flex items-center space-x-3">
-            {/* Botão de Pânico */}
+          {/* Grupo Direito: PANICO e AJUDA */}
+          <div className="flex items-center space-x-3 shrink-0 ml-auto sm:ml-0">
+            {/* 5. PANICO */}
             <button
               onClick={handlePanic}
               className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-900/30 text-xs font-mono uppercase tracking-widest transition-all cursor-pointer"
               title="Silenciar todas as notas pendentes (Panic)"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Pânico (Mute)</span>
+              <span>Pânico (Mute)</span>
             </button>
 
             {/* Info / Guia */}
@@ -247,53 +282,25 @@ export default function App() {
               <HelpCircle className="w-4 h-4" />
             </button>
           </div>
+
         </div>
       </header>
-
-      {/* Banner de Apoio PIX */}
-      <div className="bg-[#111111] border-b border-white/5 px-6 py-2.5 text-xs text-white/80 select-none">
-        <div className="w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto flex items-center justify-center gap-x-3 gap-y-2 flex-wrap">
-          <div className="flex items-center space-x-2 shrink-0">
-            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" />
-            <Coffee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="font-sans text-white/90">Contribuir Pix:</span>
-          </div>
-          <div className="flex items-center bg-black/40 border border-white/10 rounded overflow-hidden shrink-0">
-            <span className="px-3 py-1 font-mono text-xs text-accent select-all cursor-text font-bold">
-              rycobuckton@gmail.com
-            </span>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText('rycobuckton@gmail.com');
-                setCopiedPix(true);
-                setTimeout(() => setCopiedPix(false), 2000);
-              }}
-              className="bg-white/5 hover:bg-white/10 px-2.5 py-1 border-l border-white/10 text-white/60 hover:text-white transition-all font-mono text-[10px] uppercase tracking-wider font-bold cursor-pointer min-w-[75px] text-center"
-            >
-              {copiedPix ? 'Copiado!' : 'Copiar'}
-            </button>
-          </div>
-          <span className="text-white/40 font-sans text-xs shrink-0">
-            (Luiz H. Buckton P.)
-          </span>
-        </div>
-      </div>
 
       {/* Grid Principal Layout */}
       <main className="flex-1 w-full max-w-full px-4 sm:px-6 md:px-8 mx-auto p-4 md:py-6">
         <div className="flex flex-col space-y-6">
           
-          {/* Fila Superior: Partitura (Esquerda) e Cifra (Direita) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* PARTITURA GRÁFICA (8 Colunas) */}
-            <div className="lg:col-span-7 xl:col-span-8">
+          {/* Fila Superior: Partitura (Esquerda) e Cifra (Direita) - 50% / 50% no PC, empilhados no mobile */}
+          <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
+            {/* PARTITURA GRÁFICA (50% da largura no PC, 100% no mobile) */}
+            <div className="w-full lg:w-1/2">
               <section id="music-score-section">
                 <GrandStaff activeNotes={activeNotes} analysis={chordAnalysis} useFlat={useFlat} />
               </section>
             </div>
 
-            {/* ANALISADOR HARMÔNICO (4 Colunas) */}
-            <div className="lg:col-span-5 xl:col-span-4">
+            {/* ANALISADOR HARMÔNICO / CIFRA (50% da largura no PC, 100% no mobile) */}
+            <div className="w-full lg:w-1/2">
               <section id="chord-analysis-section">
                 <ChordDetails
                   analysis={chordAnalysis}
@@ -304,6 +311,8 @@ export default function App() {
                   setUseEasyMode={setUseEasyMode}
                   onlyChords={onlyChords}
                   setOnlyChords={setOnlyChords}
+                  accentColor={accentColor}
+                  setAccentColor={setAccentColor}
                 />
               </section>
             </div>
@@ -333,8 +342,8 @@ export default function App() {
               setSynthWaveform={setSynthWaveform}
               soundSource={soundSource}
               setSoundSource={setSoundSource}
-              accentId={accentId}
-              setAccentId={setAccentId}
+              accentColor={accentColor}
+              setAccentColor={setAccentColor}
               sfLibrary={sfLibrary}
               setSfLibrary={setSfLibrary}
             />

@@ -184,7 +184,7 @@ export default function MIDIConnection({ onMidiNoteOn, onMidiNoteOff, onMidiSust
               <div className="flex items-center justify-between bg-[#0A0A0A] border border-white/15 p-4">
                 <span className="text-xs text-white/40 flex items-center font-mono">
                   <span className="w-2 h-2 rounded-full bg-white/20 mr-2.5 animate-ping" />
-                  Nenhum dispositivo físico conectado. Aguardando sinal...
+                  Nenhum dispositivo físico conectado. Aguardando notas MIDI...
                 </span>
                 <span className="text-[10px] font-mono text-white/30 uppercase bg-white/5 border border-white/10 px-2 py-0.5">
                   USB / Bluetooth

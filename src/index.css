@@ -9,3 +9,12 @@
   --color-accent-border: var(--accent-border, rgba(0, 240, 255, 0.5));
 }
 
+/* Custom Standard Gray Override (#808080) */
+.text-white\/40 {
+  color: #808080 !important;
+}
+
+.text-white\/50 {
+  color: #808080 !important;
+}
+

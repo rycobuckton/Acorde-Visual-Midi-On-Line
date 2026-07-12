@@ -12,19 +12,11 @@ interface SynthControlsProps {
   setSynthWaveform: (t: OscillatorType) => void;
   soundSource: 'synth' | 'soundfont';
   setSoundSource: (s: 'synth' | 'soundfont') => void;
-  accentId: string;
-  setAccentId: (id: string) => void;
+  accentColor: string;
+  setAccentColor: (color: string) => void;
   sfLibrary: 'FluidR3' | 'MusyngKite';
   setSfLibrary: (lib: 'FluidR3' | 'MusyngKite') => void;
 }
-
-const ACCENT_COLORS = [
-  { id: 'cyan', name: 'Ciano', hex: '#00F0FF', bg: 'bg-[#00F0FF]', glow: 'shadow-[0_0_12px_rgba(0,240,255,0.7)]' },
-  { id: 'green', name: 'Verde', hex: '#00FF66', bg: 'bg-[#00FF66]', glow: 'shadow-[0_0_12px_rgba(0,255,102,0.7)]' },
-  { id: 'yellow', name: 'Ouro', hex: '#FACC15', bg: 'bg-[#FACC15]', glow: 'shadow-[0_0_12px_rgba(250,204,21,0.7)]' },
-  { id: 'pink', name: 'Rosa', hex: '#FF007F', bg: 'bg-[#FF007F]', glow: 'shadow-[0_0_12px_rgba(255,0,127,0.7)]' },
-  { id: 'orange', name: 'Laranja', hex: '#FF6600', bg: 'bg-[#FF6600]', glow: 'shadow-[0_0_12px_rgba(255,102,0,0.7)]' },
-];
 
 export default function SynthControls({
   synth,
@@ -36,8 +28,8 @@ export default function SynthControls({
   setSynthWaveform,
   soundSource,
   setSoundSource,
-  accentId,
-  setAccentId,
+  accentColor,
+  setAccentColor,
   sfLibrary,
   setSfLibrary,
 }: SynthControlsProps) {
@@ -221,35 +213,27 @@ export default function SynthControls({
           )}
         </div>
 
-        {/* 4. Seletor de Tema de Cores */}
+        {/* 4. Seletor de Tema de Cores Personalizado */}
         <div className="space-y-2.5 bg-white/5 border border-white/5 p-3 flex flex-col justify-center min-h-[90px]">
           <span className="text-[10px] font-mono text-white/40 block uppercase tracking-widest flex items-center">
-            <Palette className="w-3 h-3 text-accent mr-1.5" />
-            Tema (Cor)
+            <Palette className="w-3.5 h-3.5 text-accent mr-1.5" />
+            Cor Personalizada
           </span>
 
-          <div className="flex items-center space-x-2">
-            {ACCENT_COLORS.map((color) => (
-              <button
-                key={color.id}
-                onClick={() => setAccentId(color.id)}
-                className={`w-6 h-6 rounded-full cursor-pointer transition-all duration-300 border relative ${color.bg} ${
-                  accentId === color.id
-                    ? `${color.glow} border-white scale-110`
-                    : 'border-transparent opacity-50 hover:opacity-100 hover:scale-105'
-                }`}
-                title={`Tema ${color.name}`}
-              >
-                {accentId === color.id && (
-                  <span className="absolute inset-0 flex items-center justify-center text-black text-[10px] font-bold">
-                    ✓
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="flex items-center space-x-3 bg-black/40 border border-white/10 p-1.5 px-3.5 h-9">
+            <input 
+              type="color" 
+              value={accentColor} 
+              onChange={(e) => setAccentColor(e.target.value)} 
+              className="w-6 h-6 bg-transparent border border-white/10 cursor-pointer p-0 rounded shrink-0"
+              title="Escolher Cor de Destaque"
+            />
+            <span className="text-xs font-mono font-bold text-accent tracking-wider uppercase select-all">
+              {accentColor}
+            </span>
           </div>
           <div className="text-[9px] font-mono text-white/20 uppercase tracking-wide">
-            Cores de destaque na interface
+            Controla o tom de destaque do app
           </div>
         </div>
       </div>

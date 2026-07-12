@@ -44,28 +44,45 @@ export default function VirtualPiano({
     return map[noteInOctave] || '';
   };
 
-  // Vamos montar 3 oitavas completas de teclas
-  // Oitava 1: baseOctave
-  // Oitava 2: baseOctave + 1
-  // Oitava 3: baseOctave + 2
-  // Tecla extra no final: C da oitava baseOctave + 3 (para fechar a escala)
-  const startMidi = baseOctave * 12 + 12; // Ex: se baseOctave=3, inicia em C4 (midi 60)
-  
-  // Lista de teclas brancas para desenhar
+  // Número de oitavas dinâmico para o teclado virtual
+  const [octaveCount, setOctaveCount] = React.useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('midi_analyzer_piano_octaves');
+      return saved ? parseInt(saved, 10) : 3;
+    } catch {
+      return 3;
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('midi_analyzer_piano_octaves', String(octaveCount));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [octaveCount]);
+
+  const handleSetOctaveCount = (count: number) => {
+    setOctaveCount(count);
+    if (baseOctave + count > 8) {
+      setBaseOctave(8 - count);
+    }
+  };
+
+  // Gerar chaves para octaveCount oitavas
+  const numWhiteKeys = octaveCount * 7 + 1;
   const whiteKeys: { midi: number; label: string }[] = [];
-  // Lista de teclas pretas para desenhar
   const blackKeys: { midi: number; label: string; leftOffsetPercent: number }[] = [];
 
-  // Gerar chaves para 3 oitavas (total de 22 teclas brancas, de C a C)
   let whiteIndex = 0;
-  for (let octOffset = 0; octOffset <= 3; octOffset++) {
+  for (let octOffset = 0; octOffset <= octaveCount; octOffset++) {
     const currentOctave = baseOctave + octOffset;
     
     for (let i = 0; i < 12; i++) {
       const midiVal = currentOctave * 12 + 12 + i;
       
-      // Limitar a exatamente 3 oitavas + C final (22 teclas brancas)
-      if (octOffset === 3 && i > 0) break;
+      // Limitar a exatamente octaveCount oitavas + C final
+      if (octOffset === octaveCount && i > 0) break;
 
       const isBlack = isBlackKey(i);
       const label = `${getNoteLabel(i)}${currentOctave + 1}`;
@@ -75,10 +92,7 @@ export default function VirtualPiano({
         whiteIndex++;
       } else {
         // Calcular posição relativa horizontal baseada no número de teclas brancas inseridas até agora
-        // Cada tecla branca ocupa 100% / 22 de largura
-        // A tecla preta fica em cima da divisão, ou seja, em (whiteIndex) * largura_branca
-        // Ajustamos para centralizar a tecla preta subtraindo metade de sua largura estimada (3% do total)
-        const leftPercent = (whiteIndex * (100 / 22)) - (3 / 2);
+        const leftPercent = (whiteIndex * (100 / numWhiteKeys)) - ((60 / numWhiteKeys) / 2);
         blackKeys.push({ midi: midiVal, label, leftOffsetPercent: leftPercent });
       }
     }
@@ -181,25 +195,55 @@ export default function VirtualPiano({
           Teclado Virtual (Multitouch & Deslizável)
         </h3>
 
-        {/* Seleção de Oitavas */}
-        <div className="flex items-center space-x-1">
-          <button
-            onClick={() => setBaseOctave(Math.max(1, baseOctave - 1))}
-            disabled={baseOctave <= 1}
-            className="px-3 py-1.5 text-[10px] font-mono uppercase bg-white/5 border border-white/10 hover:bg-white/10 text-white disabled:opacity-35 transition cursor-pointer"
-          >
-            Oitava -
-          </button>
-          <span className="px-3 py-1.5 text-[10px] font-mono font-bold tracking-widest text-accent bg-[#0A0A0A] border border-white/10 uppercase">
-            C{baseOctave + 1} - C{baseOctave + 4}
-          </span>
-          <button
-            onClick={() => setBaseOctave(Math.min(6, baseOctave + 1))}
-            disabled={baseOctave >= 6}
-            className="px-3 py-1.5 text-[10px] font-mono uppercase bg-white/5 border border-white/10 hover:bg-white/10 text-white disabled:opacity-35 transition cursor-pointer"
-          >
-            Oitava +
-          </button>
+        {/* Controles de Oitavas e Tamanho do Piano */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* Controle do Número de Oitavas (Teclas) */}
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => handleSetOctaveCount(Math.max(1, octaveCount - 1))}
+              disabled={octaveCount <= 1}
+              className="px-2.5 py-1.5 text-[10px] font-mono uppercase bg-white/5 border border-white/10 hover:bg-white/10 text-white disabled:opacity-35 transition cursor-pointer"
+              title="Diminuir número de oitavas do teclado"
+            >
+              Teclas -
+            </button>
+            <span className="px-2 py-1.5 text-[10px] font-mono font-bold text-white bg-[#0A0A0A] border border-white/10 uppercase">
+              {octaveCount} {octaveCount === 1 ? 'Oitava' : 'Oitavas'}
+            </span>
+            <button
+              onClick={() => handleSetOctaveCount(Math.min(5, octaveCount + 1))}
+              disabled={octaveCount >= 5}
+              className="px-2.5 py-1.5 text-[10px] font-mono uppercase bg-white/5 border border-white/10 hover:bg-white/10 text-white disabled:opacity-35 transition cursor-pointer"
+              title="Aumentar número de oitavas do teclado"
+            >
+              Teclas +
+            </button>
+          </div>
+
+          <div className="hidden sm:block w-px h-4 bg-white/10" />
+
+          {/* Seleção de Oitavas (Transposição) */}
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => setBaseOctave(Math.max(1, baseOctave - 1))}
+              disabled={baseOctave <= 1}
+              className="px-3 py-1.5 text-[10px] font-mono uppercase bg-white/5 border border-white/10 hover:bg-white/10 text-white disabled:opacity-35 transition cursor-pointer"
+              title="Transpor oitava para a esquerda (mais grave)"
+            >
+              Oitava -
+            </button>
+            <span className="px-3 py-1.5 text-[10px] font-mono font-bold tracking-widest text-accent bg-[#0A0A0A] border border-white/10 uppercase">
+              C{baseOctave + 1} - C{baseOctave + 1 + octaveCount}
+            </span>
+            <button
+              onClick={() => setBaseOctave(Math.min(8 - octaveCount, baseOctave + 1))}
+              disabled={baseOctave >= 8 - octaveCount}
+              className="px-3 py-1.5 text-[10px] font-mono uppercase bg-white/5 border border-white/10 hover:bg-white/10 text-white disabled:opacity-35 transition cursor-pointer"
+              title="Transpor oitava para a direita (mais agudo)"
+            >
+              Oitava +
+            </button>
+          </div>
         </div>
       </div>
 
@@ -225,7 +269,7 @@ export default function VirtualPiano({
                 onMouseDown={() => handlePressStart(key.midi)}
                 onMouseUp={() => handlePressEnd(key.midi)}
                 onMouseLeave={() => handleMouseLeave(key.midi)}
-                style={{ width: `${100 / 22}%` }}
+                style={{ width: `${100 / numWhiteKeys}%` }}
                 className={`h-full border-r border-black/30 transition-all duration-75 flex flex-col justify-end pb-3 items-center text-[10px] font-mono font-semibold cursor-pointer ${
                   isActive 
                     ? activeClass 
@@ -253,7 +297,7 @@ export default function VirtualPiano({
                 onMouseLeave={() => handleMouseLeave(key.midi)}
                 style={{
                   left: `${key.leftOffsetPercent}%`,
-                  width: '3%'
+                  width: `${60 / numWhiteKeys}%`
                 }}
                 className={`absolute top-0 h-full border-b border-r border-l border-black/50 pointer-events-auto transition-all duration-75 flex flex-col justify-end pb-2 items-center text-[8px] font-mono cursor-pointer ${
                   isActive 
