@@ -235,8 +235,12 @@ export default function App() {
             {/* 2, 3, 4. CORAÇÃO, CAFE e CONTRIBUIÇÃO (PIX) */}
             <div className="flex items-center gap-x-3 gap-y-2 flex-wrap shrink-0">
               <div className="flex items-center space-x-1.5 shrink-0">
-                <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" title="Coração" />
-                <Coffee className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Café" />
+                <span title="Coração" className="shrink-0">
+                  <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse shrink-0" />
+                </span>
+                <span title="Café" className="shrink-0">
+                  <Coffee className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                </span>
                 <span className="font-sans text-xs text-white/90">Contribuir Pix:</span>
               </div>
               <div className="flex items-center bg-black/40 border border-white/10 rounded overflow-hidden shrink-0">
