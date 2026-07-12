@@ -5,9 +5,10 @@ import {defineConfig} from 'vite';
 
 const repoName = 'Acorde-Visual-Midi-On-Line';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production';
   return {
-    base: `/${repoName}/`,
+    base: isProd ? `/${repoName}/` : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
