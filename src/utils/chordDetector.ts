@@ -919,7 +919,7 @@ export const analyzePlayedNotes = (midiNumbers: number[], useFlat: boolean = fal
 export const getFullChordDescriptionPT = (root: string, symbol: string): string => {
   const rootPT = noteToPT(root);
   
-  if (!symbol) return `Acorde de ${rootPT} Maior`;
+  if (!symbol) return `${rootPT} Maior`;
 
   // Extrair o conteúdo dos parênteses se houver
   const parenMatch = symbol.match(/\(([^)]+)\)/);
@@ -967,7 +967,7 @@ export const getFullChordDescriptionPT = (root: string, symbol: string): string 
 
   const translatedTensions = tensions.map(t => tensionTranslation[t] || t);
 
-  let fullDescription = `Acorde de ${rootPT}`;
+  let fullDescription = `${rootPT}`;
   if (basePT === "Maior" || basePT === "Menor" || basePT === "Meio-Diminuto" || basePT === "Diminuto" || basePT === "Aumentado") {
     fullDescription += ` ${basePT}`;
     if (translatedTensions.length > 0) {
