@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ChordAnalysis } from '../types';
+import { ChordAnalysis, ActiveNote } from '../types';
 import { Music, Layers, Compass, Maximize2, Minimize2, Upload, Trash2, Image, ChevronLeft, ChevronRight, HelpCircle, BookOpen } from 'lucide-react';
+import GrandStaff from './GrandStaff';
 
 function calculateIntervalFromNoteNames(note1: string, note2: string): number {
   if (!note1 || !note2) return -1;
@@ -49,6 +50,7 @@ function getIntervalName(interval: number, temSetima: boolean, chordName?: strin
 interface ChordDetailsProps {
   analysis: ChordAnalysis | null;
   activeNotesCount?: number;
+  activeNotes?: ActiveNote[];
   useFlat: boolean;
   setUseFlat: (flat: boolean) => void;
   useEasyMode: boolean;
@@ -115,6 +117,7 @@ function formatChordDisplay(chordName: string): string {
 export default function ChordDetails({
   analysis: propAnalysis,
   activeNotesCount = 0,
+  activeNotes = [],
   useFlat,
   setUseFlat,
   useEasyMode,
@@ -197,6 +200,23 @@ export default function ChordDetails({
       return 0.85;
     }
   });
+
+  const [fullscreenView, setFullscreenView] = useState<'cifras' | 'pauta'>(() => {
+    try {
+      const saved = localStorage.getItem('midi_analyzer_fs_view');
+      return (saved === 'pauta' || saved === 'cifras') ? saved : 'cifras';
+    } catch {
+      return 'cifras';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('midi_analyzer_fs_view', fullscreenView);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [fullscreenView]);
 
   const [controlsVisible, setControlsVisible] = useState(true);
   const mouseTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -569,6 +589,52 @@ export default function ChordDetails({
 
             {/* Controles de Cifra */}
             <div className="flex items-center space-x-1.5 h-7">
+              {/* Botão de Carregar (Arquivos) */}
+              <div className="flex items-center h-7 bg-white/5 border border-white/10 p-0.5 text-[9px] font-mono">
+                <label className="h-6 px-2.5 hover:text-accent text-white/40 flex items-center justify-center cursor-pointer gap-1 transition select-none" title="Carregar arquivo(s) de cifra / partitura">
+                  <Upload className="w-3 h-3 text-accent" />
+                  <span>ARQUIVO (ABRIR)</span>
+                  <input 
+                    type="file" 
+                    accept=".pdf,image/png,image/jpeg,image/webp,image/bmp,image/gif,image/*" 
+                    multiple 
+                    onChange={handleImageUpload} 
+                    className="hidden" 
+                  />
+                </label>
+              </div>
+
+              {/* Caixa Box Seletora */}
+              {imageList.length > 0 && (
+                <div className="flex items-center h-7 bg-white/5 border border-white/10 p-0.5 text-[9px] font-mono gap-1">
+                  <button
+                    onClick={prevImage}
+                    className="h-6 w-6 hover:text-white text-white/40 transition cursor-pointer flex items-center justify-center border border-transparent hover:border-white/5"
+                    title="Cifra Anterior"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <select
+                    value={currentImageIndex}
+                    onChange={(e) => setCurrentImageIndex(parseInt(e.target.value, 10))}
+                    className="bg-transparent text-accent text-[9px] font-mono font-bold border-none focus:outline-none focus:ring-0 max-w-[120px] truncate cursor-pointer py-0.5"
+                  >
+                    {imageList.map((img, idx) => (
+                      <option key={img.id} value={idx} className="bg-[#0D0D0D] text-white">
+                        {img.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={nextImage}
+                    className="h-6 w-6 hover:text-white text-white/40 transition cursor-pointer flex items-center justify-center border border-transparent hover:border-white/5"
+                    title="Próxima Cifra"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               {/* 1. Botão de Modo Fácil (EASY) */}
               <button
                 onClick={() => setUseEasyMode(!useEasyMode)}
@@ -758,11 +824,11 @@ export default function ChordDetails({
             }`}
           >
             <div className="flex flex-wrap items-center gap-2.5 w-full">
-              {/* 1. Botão de Carregar (Arquivos) - Primeiro à esquerda */}
+              {/* Botão de Carregar (Arquivos) */}
               <div className="flex items-center h-9 bg-white/5 border border-white/10 p-0.5 text-[11px] font-mono">
                 <label className="h-7 px-3.5 hover:text-accent text-white/40 flex items-center justify-center cursor-pointer gap-1.5 transition select-none" title="Carregar arquivo(s) de cifra / partitura">
                   <Upload className="w-3.5 h-3.5 text-accent" />
-                  <span>ARQUIVOS</span>
+                  <span>ARQUIVO (ABRIR)</span>
                   <input 
                     type="file" 
                     accept=".pdf,image/png,image/jpeg,image/webp,image/bmp,image/gif,image/*" 
@@ -773,7 +839,7 @@ export default function ChordDetails({
                 </label>
               </div>
 
-              {/* Caixa Box Seletora (Entre arquivos e cor) */}
+              {/* Caixa Box Seletora */}
               {imageList.length > 0 && (
                 <div className="flex items-center h-9 bg-white/5 border border-white/10 p-0.5 text-[11px] font-mono gap-1">
                   <button
@@ -803,6 +869,34 @@ export default function ChordDetails({
                   </button>
                 </div>
               )}
+
+              {/* CHAVE ALTERNADORA (CIFRAS / PAUTA) */}
+              <div className="flex h-9 bg-white/5 border border-white/10 p-0.5 rounded-none text-[11px] font-mono items-center">
+                <button
+                  onClick={() => setFullscreenView('cifras')}
+                  className={`h-7 px-3.5 transition flex items-center justify-center cursor-pointer select-none gap-1.5 ${
+                    fullscreenView === 'cifras'
+                      ? 'bg-accent/15 text-accent border border-accent/30 font-bold font-mono'
+                      : 'text-white/40 hover:text-white/85 font-mono'
+                  }`}
+                  title="Exibir Cifras Carregadas e Acorde Gigante"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>CIFRAS</span>
+                </button>
+                <button
+                  onClick={() => setFullscreenView('pauta')}
+                  className={`h-7 px-3.5 transition flex items-center justify-center cursor-pointer select-none gap-1.5 ${
+                    fullscreenView === 'pauta'
+                      ? 'bg-accent/15 text-accent border border-accent/30 font-bold font-mono'
+                      : 'text-white/40 hover:text-white/85 font-mono'
+                  }`}
+                  title="Exibir Pauta Musical (Clave de Sol e Fá)"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>PAUTA</span>
+                </button>
+              </div>
 
               {/* 2. Cor de Destaque Personalizada em Tela Cheia */}
               <div className="flex items-center h-9 bg-white/5 border border-white/10 px-3.5 text-xs font-mono">
@@ -934,7 +1028,7 @@ export default function ChordDetails({
           </div>
 
           {/* Floating Next/Previous arrow overlays for multi-image navigation */}
-          {imageList.length > 1 && (
+          {fullscreenView === 'cifras' && imageList.length > 1 && (
             <>
               <button
                 onClick={prevImage}
@@ -978,7 +1072,7 @@ export default function ChordDetails({
                     <img
                       src={loadedImage}
                       alt="Cifra Carregada"
-                      className="max-w-full max-h-full object-contain pointer-events-none select-none"
+                      className="w-full h-full object-contain pointer-events-none select-none"
                       referrerPolicy="no-referrer"
                       style={{
                         transform: `rotate(${currentRotation}deg)`,
@@ -998,30 +1092,47 @@ export default function ChordDetails({
             )}
           </div>
 
-          {/* Giant Floating Chord overlay - centered, pointer-events-none */}
+          {/* Giant Floating Chord / Staff overlay - centered, pointer-events-none */}
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none select-none transition-all">
-            {analysis ? (
-              <h2 
-                style={{ 
-                  color: accentColor, 
-                  opacity: chordOpacity,
-                  fontSize: `calc(${getChordBaseFontSize()} * ${fsFontScale} * 1.5)` 
-                }}
-                className="font-normal font-sans tracking-tight leading-none text-center transition-all duration-150 select-none pointer-events-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+            {fullscreenView === 'cifras' ? (
+              analysis ? (
+                <h2 
+                  style={{ 
+                    color: accentColor, 
+                    opacity: chordOpacity,
+                    fontSize: `calc(${getChordBaseFontSize()} * ${fsFontScale} * 1.5)` 
+                  }}
+                  className="font-normal font-sans tracking-tight leading-none text-center transition-all duration-150 select-none pointer-events-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                >
+                  {formatChordDisplay(analysis.chordName)}
+                </h2>
+              ) : showAwaitingText ? (
+                <h2 
+                  style={{ 
+                    color: '#666666', 
+                    opacity: chordOpacity,
+                  }}
+                  className="text-xl sm:text-2xl font-normal font-sans tracking-[0.2em] text-center uppercase animate-pulse select-none pointer-events-none"
+                >
+                  AGUARDANDO NOTAS MIDI
+                </h2>
+              ) : null
+            ) : (
+              /* PAUTA / STAFF MODE */
+              <div 
+                className="w-full max-w-2xl flex items-center justify-center pointer-events-none"
               >
-                {formatChordDisplay(analysis.chordName)}
-              </h2>
-            ) : showAwaitingText ? (
-              <h2 
-                style={{ 
-                  color: '#666666', 
-                  opacity: chordOpacity,
-                }}
-                className="text-xl sm:text-2xl font-normal font-sans tracking-[0.2em] text-center uppercase animate-pulse select-none pointer-events-none"
-              >
-                AGUARDANDO NOTAS MIDI
-              </h2>
-            ) : null}
+                <GrandStaff 
+                  activeNotes={activeNotes}
+                  analysis={analysis}
+                  useFlat={useFlat}
+                  accentColor={accentColor}
+                  opacity={chordOpacity}
+                  isFullscreen={true}
+                  fsScale={fsFontScale * 1.1}
+                />
+              </div>
+            )}
           </div>
 
           {/* CAIXA SUSPENSA DE AJUDA */}
@@ -1045,7 +1156,7 @@ export default function ChordDetails({
                 <div>
                   <p className="font-bold text-accent uppercase tracking-wider text-[9px] mb-1 font-mono">1. Como selecionar os arquivos:</p>
                   <p>
-                    Clique no botão <strong className="text-accent font-mono">ARQUIVOS</strong> para abrir a janela do sistema. Você pode selecionar uma ou várias imagens/PDFs de uma vez. Para carregar todas as imagens de um diretório, entre na pasta correspondente e pressione <kbd className="bg-white/10 px-1 py-0.5 rounded font-mono text-[10px]">Ctrl+A</kbd> (ou <kbd className="bg-white/10 px-1 py-0.5 rounded font-mono text-[10px]">Cmd+A</kbd> no Mac) para selecionar tudo.
+                    Clique no botão <strong className="text-accent font-mono">ARQUIVO (ABRIR)</strong> para abrir a janela do sistema. Você pode selecionar uma ou várias imagens/PDFs de uma vez. Para carregar todas as imagens de um diretório, entre na pasta correspondente e pressione <kbd className="bg-white/10 px-1 py-0.5 rounded font-mono text-[10px]">Ctrl+A</kbd> (ou <kbd className="bg-white/10 px-1 py-0.5 rounded font-mono text-[10px]">Cmd+A</kbd> no Mac) para selecionar tudo.
                   </p>
                 </div>
 

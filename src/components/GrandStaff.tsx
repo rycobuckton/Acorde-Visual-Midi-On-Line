@@ -58,9 +58,21 @@ interface GrandStaffProps {
   activeNotes: ActiveNote[];
   analysis?: ChordAnalysis | null;
   useFlat: boolean;
+  accentColor?: string;
+  opacity?: number;
+  isFullscreen?: boolean;
+  fsScale?: number;
 }
 
-export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaffProps) {
+export default function GrandStaff({ 
+  activeNotes, 
+  analysis, 
+  useFlat,
+  accentColor,
+  opacity,
+  isFullscreen = false,
+  fsScale = 1.0
+}: GrandStaffProps) {
   const [showAwaitingText, setShowAwaitingText] = React.useState(true);
 
   React.useEffect(() => {
@@ -96,6 +108,8 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
 
   const lineSpacing = 16;
   const stepSpacing = lineSpacing / 2; // 8px por semitom diatônico
+
+  const isFS = isFullscreen;
 
   // Obter deslocamento diatônico da nota (C -> 0, D -> 1, E -> 2, etc.)
   const getDiatonicOffset = (noteLetter: string): number => {
@@ -166,6 +180,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
   const renderLedgerLines = (step: number, isTreble: boolean, noteX: number, noteY: number) => {
     const lines: React.ReactNode[] = [];
     const lineLen = 28;
+    const ledgerStrokeOpacity = isFS ? "0.6" : "0.8";
 
     if (isTreble) {
       if (step <= 0) {
@@ -182,7 +197,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
               x2={noteX + lineLen / 2}
               y2={ly}
               stroke="var(--accent)"
-              strokeOpacity="0.8"
+              strokeOpacity={ledgerStrokeOpacity}
               strokeWidth="1.5"
             />
           );
@@ -201,7 +216,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
               x2={noteX + lineLen / 2}
               y2={ly}
               stroke="var(--accent)"
-              strokeOpacity="0.8"
+              strokeOpacity={ledgerStrokeOpacity}
               strokeWidth="1.5"
             />
           );
@@ -222,7 +237,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
               x2={noteX + lineLen / 2}
               y2={ly}
               stroke="var(--accent)"
-              strokeOpacity="0.8"
+              strokeOpacity={ledgerStrokeOpacity}
               strokeWidth="1.5"
             />
           );
@@ -240,7 +255,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
               x2={noteX + lineLen / 2}
               y2={ly}
               stroke="var(--accent)"
-              strokeOpacity="0.8"
+              strokeOpacity={ledgerStrokeOpacity}
               strokeWidth="1.5"
             />
           );
@@ -301,25 +316,50 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
     showFifthOmitted = chordHasSetima && !temQuintaJusta && !quintaAlterada;
   }
 
+  const containerStyle: React.CSSProperties = {
+    ...(accentColor ? { '--accent': accentColor } : {}),
+    opacity: isFS ? 1 : (opacity !== undefined ? opacity : 1),
+  } as React.CSSProperties;
+
   return (
-    <div id="grand-staff-container" translate="no" className="notranslate relative w-full overflow-hidden bg-[#0A0A0A] border border-white/10 shadow-lg p-6">
-      <div className="absolute top-2 right-4 flex items-center space-x-1.5">
-        <div 
-          style={{ 
-            backgroundColor: activeNotes.length > 0 ? 'var(--accent)' : 'rgba(255, 255, 255, 0.1)',
-            boxShadow: activeNotes.length > 0 ? '0 0 10px var(--accent)' : 'none'
-          }}
-          className="w-3 h-3 rounded-full transition-all duration-300" 
-        />
-        <span className="text-[10px] font-mono tracking-[0.2em] text-white/40 uppercase">
-          {activeNotes.length > 0 ? `${activeNotes.length} Notas Ativas` : 'Silêncio'}
-        </span>
-      </div>
+    <div 
+      id={isFS ? "fs-grand-staff-container" : "grand-staff-container"} 
+      translate="no" 
+      className={`notranslate relative w-full overflow-hidden transition-all ${
+        isFS 
+          ? 'bg-transparent border-none shadow-none p-0 flex items-center justify-center' 
+          : 'bg-[#0A0A0A] border border-white/10 shadow-lg p-6'
+      }`}
+      style={containerStyle}
+    >
+      {!isFS && (
+        <div className="absolute top-2 right-4 flex items-center space-x-1.5">
+          <div 
+            style={{ 
+              backgroundColor: activeNotes.length > 0 ? 'var(--accent)' : 'rgba(255, 255, 255, 0.1)',
+              boxShadow: activeNotes.length > 0 ? '0 0 10px var(--accent)' : 'none'
+            }}
+            className="w-3 h-3 rounded-full transition-all duration-300" 
+          />
+          <span className="text-[10px] font-mono tracking-[0.2em] text-white/40 uppercase">
+            {activeNotes.length > 0 ? `${activeNotes.length} Notas Ativas` : 'Silêncio'}
+          </span>
+        </div>
+      )}
 
       <div className="w-full overflow-x-auto select-none scrollbar-none flex justify-center">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full max-w-[320px] h-[330px] mx-auto text-white"
+          style={{
+            transform: isFS ? `scale(${fsScale})` : undefined,
+            transformOrigin: 'center center',
+            transition: 'transform 0.2s ease-in-out',
+          }}
+          className={`w-full mx-auto text-white transition-all duration-200 ${
+            isFS 
+              ? 'max-w-[420px] h-[430px]' 
+              : 'max-w-[320px] h-[330px]'
+          }`}
         >
           {/* Definição de Gradientes */}
           <defs>
@@ -337,11 +377,20 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
           <path
             d="M 68,63 C 56,63 48,73 48,110 C 48,135 54,145 60,160 C 54,175 48,185 48,210 C 48,247 56,257 68,257"
             fill="none"
-            stroke="#a0a0a0"
+            stroke={accentColor || "#a0a0a0"}
+            strokeOpacity={isFS ? (opacity !== undefined ? opacity : 1.0) : "1"}
             strokeWidth="3.5"
             strokeLinecap="round"
           />
-          <line x1="68" y1="63" x2="68" y2="257" stroke="#a0a0a0" strokeWidth="2" />
+          <line 
+            x1="68" 
+            y1="63" 
+            x2="68" 
+            y2="257" 
+            stroke={accentColor || "#a0a0a0"} 
+            strokeOpacity={isFS ? (opacity !== undefined ? opacity : 1.0) : "1"}
+            strokeWidth="2" 
+          />
 
           {/* CLAVE DE SOL (Treble Clef Staff - 5 Linhas) */}
           <g id="treble-staff-lines">
@@ -354,7 +403,8 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
                   y1={y}
                   x2={width - 40}
                   y2={y}
-                  stroke="#858585"
+                  stroke={accentColor || "#858585"}
+                  strokeOpacity={isFS ? (opacity !== undefined ? opacity : 1.0) : "1"}
                   strokeWidth="1.5"
                 />
               );
@@ -372,7 +422,8 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
                   y1={y}
                   x2={width - 40}
                   y2={y}
-                  stroke="#858585"
+                  stroke={accentColor || "#858585"}
+                  strokeOpacity={isFS ? (opacity !== undefined ? opacity : 1.0) : "1"}
                   strokeWidth="1.5"
                 />
               );
@@ -384,7 +435,8 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
           <text
             x="78"
             y={yTrebleCenter + 22}
-            fill="#a0a0a0"
+            fill={accentColor || "#a0a0a0"}
+            opacity={isFS ? (opacity !== undefined ? opacity : 1.0) : 1}
             className="font-bold text-6xl"
             style={{ userSelect: 'none', fontFamily: '"Times New Roman", Times, "Noto Music", serif' }}
           >
@@ -395,7 +447,8 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
           <text
             x="78"
             y={yBassCenter + 4}
-            fill="#a0a0a0"
+            fill={accentColor || "#a0a0a0"}
+            opacity={isFS ? (opacity !== undefined ? opacity : 1.0) : 1}
             className="font-bold text-5xl"
             style={{ userSelect: 'none', fontFamily: '"Times New Roman", Times, "Noto Music", serif' }}
           >
@@ -438,7 +491,11 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
             }
 
             return (
-              <g key={`note-render-${note.midi}-${index}`} className="transition-all duration-150">
+              <g 
+                key={`note-render-${note.midi}-${index}`} 
+                className="transition-all duration-150"
+                style={isFS ? { opacity } : undefined}
+              >
                 {/* Efeito de brilho de fundo para notas ativas */}
                 <circle
                   cx={noteX}
@@ -486,7 +543,7 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
                   x={noteX + xTextOffset}
                   y={noteY + 4}
                   textAnchor={textAnchor}
-                  className="fill-white font-mono text-[11px] font-bold uppercase tracking-wider"
+                  className={`${isFS ? 'fill-[var(--accent)]' : 'fill-white'} font-mono text-[11px] font-bold uppercase tracking-wider`}
                 >
                   {note.name}
                 </text>
@@ -500,7 +557,8 @@ export default function GrandStaff({ activeNotes, analysis, useFlat }: GrandStaf
               x={width / 2 + 10}
               y="138"
               textAnchor="middle"
-              className="fill-white/30 font-sans text-xs uppercase tracking-[0.3em] animate-pulse"
+              className={`${isFS ? 'fill-[var(--accent)]' : 'fill-white/30'} font-sans text-xs uppercase tracking-[0.3em] animate-pulse`}
+              style={isFS ? { opacity: (opacity !== undefined ? opacity * 0.3 : 0.3) } : undefined}
             >
               AGUARDANDO NOTAS MIDI
             </text>
