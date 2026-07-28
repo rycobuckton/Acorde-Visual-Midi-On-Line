@@ -1,6 +1,6 @@
 {
-  "name": "Studio-SF2",
-  "description": "A high-performance 4-channel SoundFont (SF2) Workstation with real-time file uploading, integrated ADSR envelopes, chorus, tremolo, reverb, live set bank management, and full backup capabilities.",
-  "requestFramePermissions": [],
+  "name": "Analisador MIDI",
+  "description": "Analisador de acordes tocados no teclado MIDI em tempo real, com partitura e conexão Bluetooth.",
+  "requestFramePermissions": ["midi"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
